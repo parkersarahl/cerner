@@ -14,7 +14,6 @@ from config import (
     EPIC_TOKEN_URL,
     EPIC_CLIENT_SECRET,
 )
-from utils.auth import exchange_code_for_token
 
 router = APIRouter()
 
@@ -60,3 +59,40 @@ async def auth_callback(request: Request):
         "token_type": token_response.get("token_type"),
         "scope": token_response.get("scope")
     }
+
+@router.get("/callback")
+async def auth_callback(request: Request):
+    code = request.query_params.get("code")
+
+    if not code:
+        raise HTTPException(status_code=400, detail="Missing authorization code")
+
+    # Exchange code for token
+    token_data = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": EPIC_REDIRECT_URI,
+        "client_id": EPIC_CLIENT_ID,
+        "client_secret": EPIC_CLIENT_SECRET,
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(EPIC_TOKEN_URL, data=token_data)
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Token exchange failed")
+
+    token_response = response.json()
+
+    # ✅ Store in session
+    request.session["epic_access_token"] = token_response["access_token"]
+
+    return {"message": "Epic auth successful", "access_token": token_response["access_token"]}
+
+@router.get("/logout")
+async def logout(request: Request):
+    """
+    Logs out the user by clearing the session.
+    """
+    request.session.clear()
+    return {"message": "Logged out successfully"}

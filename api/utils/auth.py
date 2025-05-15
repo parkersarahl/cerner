@@ -1,12 +1,14 @@
-# utils/auth.py
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 from passlib.context import CryptContext
-
-# Replace with environment variables in production
-SECRET_KEY = "your_secret_key"
+from fastapi import Request, HTTPException, status
+from config import (EPIC_CLIENT_SECRET)
+# Secrets (move to environment variables in production)
+SECRET_KEY = EPIC_CLIENT_SECRET
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 5
+
+# Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
@@ -27,3 +29,15 @@ def decode_access_token(token: str) -> dict:
         return payload
     except JWTError:
         return None
+
+def get_current_user_token(request: Request) -> str:
+    """
+    Retrieve the Epic access token for the currently logged-in clinician from session.
+    """
+    token = request.session.get("epic_access_token")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated with Epic"
+        )
+    return token

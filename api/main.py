@@ -9,10 +9,9 @@ from utils.auth import (
     hash_password  
 )
 
-from database import  engine
-from models import Patient  
-from routers import patients, auth
+from routers import auth
 from routers.epic import router as epic_router
+from starlette.middleware.sessions import SessionMiddleware
 
 
 app = FastAPI()
@@ -26,14 +25,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create Tables
-Patient.metadata.create_all(bind=engine)
-
 #Register the router
-app.include_router(patients.router)
 app.include_router(auth.router)
 app.include_router(epic_router, prefix="/api")  # optional: prefix all routes
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="your_super_secret_session_key"  # move this to .env in prod
+)
