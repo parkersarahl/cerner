@@ -12,7 +12,7 @@ from utils.auth import (
 from routers import auth
 from routers.epic import router as epic_router
 from starlette.middleware.sessions import SessionMiddleware
-
+import os
 
 app = FastAPI()
 
@@ -32,7 +32,4 @@ app.include_router(epic_router, prefix="/api")  # optional: prefix all routes
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-app.add_middleware(
-    SessionMiddleware,
-    secret_key="your_super_secret_session_key"  # move this to .env in prod
-)
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SESSION_SECRET", "dev-secret"))
