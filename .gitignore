@@ -1,0 +1,12 @@
+#Supporting docs
+/articles
+*.txt
+
+#PyCache
+*.pyc
+
+#Keys
+*.pem
+
+#Environment variables
+.env
