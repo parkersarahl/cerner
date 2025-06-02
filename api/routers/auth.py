@@ -1,10 +1,11 @@
 # routers/auth.py
 
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 import urllib.parse
 from services.ehr.epic import EpicEHR
 import secrets
+
 
 from config import (
     EPIC_CLIENT_ID,
@@ -43,7 +44,10 @@ async def epic_auth_callback(request: Request, code: str = None, state: str = No
             raise HTTPException(status_code=400, detail="Access token not received")
 
         request.session["epic_access_token"] = access_token
-        return RedirectResponse(url="/me")
+        return HTMLResponse(
+            content="<html><body><h1>Login Successful</h1><p>You can close this window.</p></body></html>",
+            status_code=200,
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Token exchange failed: {str(e)}")

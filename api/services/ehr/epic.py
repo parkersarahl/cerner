@@ -34,7 +34,8 @@ class EpicEHR(EHRVendor):
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
         }
-     
+        print("Sending token exchange request with:", data)
+
         response = requests.post(EPIC_TOKEN_URL, data=data, headers=headers)
         if response.status_code != 200:
             raise Exception(f"Token exchange failed: {response.status_code}, {response.text}")
