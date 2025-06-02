@@ -2,22 +2,15 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const PatientSearch = () => {
-  const [familyName, setFamilyName] = useState('');
-  const [givenName, setGivenName] = useState('');
-  const [birthdate, setBirthdate] = useState('');
+  const [name, setName] = useState('');
   const [results, setResults] = useState([]);
   const [error, setError] = useState('');
 
   const handleSearch = async () => {
     try {
       setError('');
-      const params = new URLSearchParams();
-      if (familyName) params.append('family_name', familyName);
-      if (givenName) params.append('given_name', givenName);
-      if (birthdate) params.append('birthdate', birthdate);
-
-      const response = await axios.get(`./api/epic/patients?${params.toString()}`);
-      setResults(response.data.results || []);
+      const response = await axios.get(`/api/patients?name=${encodeURIComponent(name)}`);
+      setResults(response.data.patients || []);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.detail || 'Search failed');
@@ -30,23 +23,9 @@ const PatientSearch = () => {
       <div className="space-y-2">
         <input
           type="text"
-          placeholder="Family Name"
-          value={familyName}
-          onChange={(e) => setFamilyName(e.target.value)}
-          className="border p-2 w-full"
-        />
-        <input
-          type="text"
-          placeholder="Given Name"
-          value={givenName}
-          onChange={(e) => setGivenName(e.target.value)}
-          className="border p-2 w-full"
-        />
-        <input
-          type="date"
-          placeholder="Birthdate"
-          value={birthdate}
-          onChange={(e) => setBirthdate(e.target.value)}
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           className="border p-2 w-full"
         />
         <button
@@ -60,12 +39,15 @@ const PatientSearch = () => {
       {error && <p className="text-red-600 mt-4">{error}</p>}
 
       <ul className="mt-6 space-y-2">
-        {results.map((patient, index) => (
-          <li key={index} className="border p-2 rounded shadow hover:bg-gray-100 cursor-pointer">
-          <a href={`/patients/${patient.id}`} className="text-blue-600 hover:underline">
-            {patient.name}
-          </a> (DOB: {patient.birthDate})
-        </li>
+        {results.map((patient) => (
+          <li key={patient.id} className="border p-2 rounded shadow hover:bg-gray-100 cursor-pointer">
+            <a href={`/patients/${patient.id}`} className="text-blue-600 hover:underline">
+              {patient.name || 'Unnamed Patient'}
+            </a>
+            <div className="text-sm text-gray-700">
+              ID: {patient.id} | Gender: {patient.gender || 'Unknown'} | DOB: {patient.birthDate || 'N/A'}
+            </div>
+          </li>
         ))}
       </ul>
     </div>
