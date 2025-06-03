@@ -8,11 +8,10 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<PatientSearch />} />
-        <Route path="/patients/:id" element={<PatientDetails />} />
+        <Route path="/patients/:patientId" element={<PatientDetails />} />
       </Routes>
   </Router>
   );
 }
 
 export default App;
-// Compare this snippet from Final%20Project/frontend/src/SearchPatients.js:

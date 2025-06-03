@@ -5,18 +5,6 @@ app = FastAPI()
 
 FHIR_BASE_URL = "https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d"
 
-@app.get("/api/practitioners")
-async def get_practitioners(name: str = Query(..., description="Name of the practitioner to search")):
-    url = f"{FHIR_BASE_URL}/Practitioner?name={name}"
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers={"Accept": "application/fhir+json"})
-
-    if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=f"Error from FHIR API: {response.text}")
-
-    return response.json()
-
 
 @app.get("/api/patients")
 async def search_patients(name: str = Query(..., description="Name of the patient to search")):
@@ -50,3 +38,31 @@ async def search_patients(name: str = Query(..., description="Name of the patien
         patients.append(patient_info)
 
     return {"patients": patients}
+
+@app.get("/api/cerner/diagnostic-reports/radiology")
+async def get_diagnostic_reports(patient: str):
+    url = f"{FHIR_BASE_URL}/DiagnosticReport?patient={patient}&category=http://terminology.hl7.org/CodeSystem/v2-0074|RAD"
+    params = {"patient": patient}
+    headers = {"Accept": "application/fhir+json"}
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params, headers=headers)
+
+    if response.status_code != 200:
+        raise HTTPException(response.status_code, f"Error from FHIR API: {response.text}")
+
+    bundle = response.json()
+    return bundle
+
+@app.get("/api/cerner/patient/{patient_id}")
+async def get_patient_by_id(patient_id: str):
+    url = f"{FHIR_BASE_URL}/Patient/{patient_id}"
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, headers={"Accept": "application/fhir+json"})
+    if resp.status_code != 200:
+        raise HTTPException(status_code=resp.status_code, detail=f"Error from FHIR API: {resp.text}")
+    return resp.json()
+
+
+
+    
