@@ -42,7 +42,7 @@ const PatientSearch = () => {
         {results.map((patient) => (
           <li key={patient.id} className="border p-2 rounded shadow hover:bg-gray-100 cursor-pointer">
             <a href={`/patients/${patient.id}`} className="text-blue-600 hover:underline">
-              {patient.name || 'Unnamed Patient'}
+             {patient.name} (DOB: {patient.birthDate})
             </a>
             <div className="text-sm text-gray-700">
               ID: {patient.id} | Gender: {patient.gender || 'Unknown'} | DOB: {patient.birthDate || 'N/A'}
