@@ -5,10 +5,7 @@ import axios from 'axios';
 const PatientDetail = () => {
   const { patientId } = useParams();
   const [reports, setReports] = useState([]);
-  const [selectedResource, setSelectedResource] = useState(null);
   const [error, setError] = useState('');
-
-  const FHIR_BASE_URL = 'https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d';
 
   useEffect(() => {
 const fetchResources = async () => {
@@ -34,34 +31,42 @@ const fetchResources = async () => {
   fetchResources();
 }, [patientId]);
 
-  const handleResourceClick = async (type, id) => {
-    const url = `${FHIR_BASE_URL}/${type}/${id}`;
-    try {
-      const resp = await axios.get(url, {
-        headers: { Accept: 'application/fhir+json' },
-      });
-      setSelectedResource(resp.data);
-    } catch (err) {
-      setError('Failed to load full resource');
-      console.error(err);
-    }
-  };
+const handleResourceClick = (report) => {
+  const form = report?.presentedForm?.[0];
+
+  if (form?.url) {
+    const url = new URL(form.url);
+    const binaryId = url.pathname.split('/').pop(); // e.g., "XR-197369077"
+    window.open(`http://localhost:8000/api/cerner/binary/${binaryId}`, '_blank');
+  } else if (form?.data) {
+    const blob = new Blob([atob(form.data)], {
+      type: form.contentType || '*/*',
+    });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
+  } else {
+    setError('No report file available for this resource.');
+  }
+};
+
 
   const renderItem = (item, type) => {
   const id = item.id;
   if (!id) return null;
 
   const label =
-    item.code?.text || item.type?.[0]?.text || item.title || `${type} resource`;
+    item.code?.text || item.code?.coding?.[0]?.display || item.title || `${type} resource`;
+
+  const date = item.issued ? new Date(item.issued).toLocaleDateString() : '';
 
   return (
     <li key={`${type}-${id}`} className="my-1">
       <button
-        onClick={() => handleResourceClick(type, id)}
-        className="text-blue-600 hover:underline focus:outline-none"
-      >
-        {label}
-      </button>
+        onClick={() => handleResourceClick(item)}
+      className="text-blue-600 hover:underline focus:outline-none"
+    >
+      {label} ({date})
+    </button>
     </li>
   );
 };
@@ -77,17 +82,9 @@ const fetchResources = async () => {
           {reports.map((r) => renderItem(r, 'DiagnosticReport'))}
         </ul>
       </section>
-
-      {selectedResource && (
-        <div className="mt-6 bg-gray-100 p-4 rounded shadow overflow-x-auto max-h-[500px]">
-          <h4 className="text-md font-semibold mb-2">Resource JSON</h4>
-          <pre className="text-sm whitespace-pre-wrap">
-            {JSON.stringify(selectedResource, null, 2)}
-          </pre>
-        </div>
-      )}
     </div>
   );
 };
 
 export default PatientDetail;
+

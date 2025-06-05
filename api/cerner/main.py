@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import Response
 import httpx
 
 app = FastAPI()
@@ -62,6 +63,18 @@ async def get_patient_by_id(patient_id: str):
     if resp.status_code != 200:
         raise HTTPException(status_code=resp.status_code, detail=f"Error from FHIR API: {resp.text}")
     return resp.json()
+
+from fastapi.responses import StreamingResponse
+
+@app.get("/api/cerner/binary/{binary_id}")
+async def proxy_binary(binary_id: str):
+    url = f"{FHIR_BASE_URL}/Binary/{binary_id}"
+    headers = {"Accept": "*/*"}  #any text or binary content
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, headers=headers)
+        if resp.status_code != 200:
+            raise HTTPException(resp.status_code, f"Error fetching binary: {resp.text}")
+        return StreamingResponse(resp.aiter_raw(), media_type=resp.headers.get("content-type"))
 
 
 
