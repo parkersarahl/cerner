@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import Response
 import httpx
+from fastapi.responses import StreamingResponse
+import io
 
 app = FastAPI()
 
@@ -53,7 +54,18 @@ async def get_diagnostic_reports(patient: str):
         raise HTTPException(response.status_code, f"Error from FHIR API: {response.text}")
 
     bundle = response.json()
-    return bundle
+
+    filtered_entries = []
+    for entry in bundle.get("entry", []):
+        category_list = entry["resource"].get("category", [])
+        for cat in category_list:
+            for coding in cat.get("coding", []):
+                if coding.get("code") == "LP29684-5":  # Radiology
+                    filtered_entries.append(entry)
+                    break
+
+    return {"entry": filtered_entries}
+
 
 @app.get("/api/cerner/patient/{patient_id}")
 async def get_patient_by_id(patient_id: str):
@@ -64,18 +76,47 @@ async def get_patient_by_id(patient_id: str):
         raise HTTPException(status_code=resp.status_code, detail=f"Error from FHIR API: {resp.text}")
     return resp.json()
 
-from fastapi.responses import StreamingResponse
+@app.get("/api/cerner/diagnostic-reports/labs")
+async def get_lab_reports(patient: str):
+    url = f"{FHIR_BASE_URL}/DiagnosticReport"
+    params = {
+        "patient": patient,
+        "category": "http://terminology.hl7.org/CodeSystem/v2-0074|LAB"
+    }
+    headers = {"Accept": "application/fhir+json"}
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params, headers=headers)
+
+    if response.status_code != 200:
+        raise HTTPException(response.status_code, f"Error from FHIR API: {response.text}")
+
+    return response.json()
+
+VALID_ACCEPTS = {
+    "application/pdf",
+    "image/jpeg",
+    "application/dicom",
+    "application/fhir+xml",
+    "application/fhir+json",
+    "*/*",
+}
 
 @app.get("/api/cerner/binary/{binary_id}")
-async def proxy_binary(binary_id: str):
+async def proxy_binary(binary_id: str, accept: str = Query("application/pdf")):
+    if accept not in VALID_ACCEPTS:
+        accept = "application/pdf"
+
     url = f"{FHIR_BASE_URL}/Binary/{binary_id}"
-    headers = {"Accept": "*/*"}  #any text or binary content
+    headers = {"Accept": accept}
+
     async with httpx.AsyncClient() as client:
         resp = await client.get(url, headers=headers)
+        content = resp.content  # Read content ONCE
+
         if resp.status_code != 200:
-            raise HTTPException(resp.status_code, f"Error fetching binary: {resp.text}")
-        return StreamingResponse(resp.aiter_raw(), media_type=resp.headers.get("content-type"))
+            raise HTTPException(resp.status_code, f"Error fetching binary: {content.decode(errors='ignore')}")
+
+        return StreamingResponse(io.BytesIO(content), media_type=resp.headers.get("content-type"))
 
 
-
-    
