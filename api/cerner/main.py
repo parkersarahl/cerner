@@ -47,7 +47,8 @@ async def get_diagnostic_reports(patient: str):
     params = {"patient": patient}
     headers = {"Accept": "application/fhir+json"}
 
-    async with httpx.AsyncClient() as client:
+    timeout = httpx.Timeout(30.0, connect=10.0)
+    async with httpx.AsyncClient(timeout=timeout) as client:
         response = await client.get(url, params=params, headers=headers)
 
     if response.status_code != 200:
