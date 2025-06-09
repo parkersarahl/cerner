@@ -2,14 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
-const PatientDetail = () => {
+const PatientDetail = ({ patientID }) => {
   const { patientId } = useParams();
   const [radiologyReports, setRadiologyReports] = useState([]);
   const [labReports, setLabReports] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchResources = async () => {
+      setIsLoading(true);
       try {
         setError('');
 
@@ -17,55 +19,54 @@ const PatientDetail = () => {
           axios.get(`/api/cerner/diagnostic-reports/radiology?patient=${patientId}`),
           axios.get(`/api/cerner/diagnostic-reports/labs?patient=${patientId}`),
         ]);
-      
+
         const getResources = (bundle) =>
           bundle?.entry?.map((e) => e.resource) || [];
 
         setRadiologyReports(getResources(radiologyRes.data));
         setLabReports(getResources(labRes.data));
-
       } catch (err) {
         setError('Failed to load patient resources');
         console.error(err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchResources();
   }, [patientId]);
-  
-const ALLOWED_ACCEPTS = [
-  "application/pdf",
-  "image/jpeg",
-  "application/dicom",
-  "application/fhir+xml",
-  "application/fhir+json",
-  "*/*",
-];
 
-const handleResourceClick = (report) => {
-  const form = report?.presentedForm?.[0];
+  const ALLOWED_ACCEPTS = [
+    "application/pdf",
+    "image/jpeg",
+    "application/dicom",
+    "application/fhir+xml",
+    "application/fhir+json",
+    "*/*",
+  ];
 
-  if (form?.url) {
-    const url = new URL(form.url);
-    const binaryId = url.pathname.split('/').pop();
-    let contentType = form.contentType || 'application/pdf';
+  const handleResourceClick = (report) => {
+    const form = report?.presentedForm?.[0];
 
-    // sanitize accept header to allowed types only
-    if (!ALLOWED_ACCEPTS.includes(contentType)) {
-      contentType = 'application/pdf';
+    if (form?.url) {
+      const url = new URL(form.url);
+      const binaryId = url.pathname.split('/').pop();
+      let contentType = form.contentType || 'application/pdf';
+
+      if (!ALLOWED_ACCEPTS.includes(contentType)) {
+        contentType = 'application/pdf';
+      }
+
+      window.open(
+        `http://localhost:8000/api/cerner/binary/${binaryId}?accept=${encodeURIComponent(contentType)}`,
+        '_blank'
+      );
+    } else if (form?.data) {
+      // Handle embedded base64 blobs (not shown here)
+    } else {
+      setError('No report file available for this resource.');
     }
-
-    window.open(
-      `http://localhost:8000/api/cerner/binary/${binaryId}?accept=${encodeURIComponent(contentType)}`,
-      '_blank'
-    );
-  } else if (form?.data) {
-    // ... your existing blob handling code
-  } else {
-    setError('No report file available for this resource.');
-  }
-};
-
+  };
 
   const renderItem = (item, type) => {
     const id = item.id;
@@ -74,7 +75,7 @@ const handleResourceClick = (report) => {
     const label =
       item.code?.text || item.code?.coding?.[0]?.display || item.title || `${type} resource`;
 
-    const date = item.issued ? new Date(item.issued).toLocaleDateString() : '';
+    const date = item.issued ? new Date(item.issued).toLocaleDateString('en-US') : '';
 
     return (
       <li key={`${type}-${id}`} className="my-1">
@@ -87,6 +88,15 @@ const handleResourceClick = (report) => {
       </li>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid"></div>
+        <p className="text-gray-600 text-lg">Loading patient data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4">
