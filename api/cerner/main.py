@@ -99,6 +99,7 @@ VALID_ACCEPTS = {
     "application/dicom",
     "application/fhir+xml",
     "application/fhir+json",
+    "text/plain",
     "*/*",
 }
 
