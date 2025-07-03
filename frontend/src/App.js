@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import FrontPage from './FrontPage';
 import PatientSearch from './PatientSearch';
 import PatientDetails from './PatientDetails';
+import EpicLogin from './EpicLogin';
 import './index.css'; // Ensure you have your styles imported
 
 function App() {
@@ -12,7 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<FrontPage />} />
         <Route path="/search/:source" element={<PatientSearch />} />
-        {/* <Route path="/epic" element={<PatientSearch source="epic" />} /> */}
+        <Route path="/epic-login" element={<EpicLogin />} />
         <Route path="/patients/:patientId" element={<PatientDetails />} />
       </Routes>
     </Router>

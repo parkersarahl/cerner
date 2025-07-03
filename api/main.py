@@ -10,7 +10,6 @@ from utils.auth import (
 )
 
 from routers import auth
-from routers.epic import router as epic_router
 from starlette.middleware.sessions import SessionMiddleware
 import os
 
@@ -27,7 +26,6 @@ app.add_middleware(
 
 #Register the router
 app.include_router(auth.router)
-app.include_router(epic_router, prefix="/api")  # optional: prefix all routes
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

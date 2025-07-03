@@ -29,28 +29,32 @@ async def login_to_epic():
         "scope": EPIC_SCOPES,
         "state": state,
     })
-    return RedirectResponse(f"{EPIC_AUTH_URL}?{query}")
 
-@router.get("/auth/callback")
-async def epic_auth_callback(request: Request, code: str = None, state: str = None):
+    auth_url = f"{EPIC_AUTH_URL}?{query}"
+    print("🔍 Epic Auth URL:", auth_url)  # <-- Debug print here
+
+    return RedirectResponse(auth_url)
+
+@router.get("/epic/callback")
+async def epic_callback(request: Request):
+    code = request.query_params.get("code")
     if not code:
-        raise HTTPException(status_code=400, detail="Authorization code not found")
+        raise HTTPException(status_code=400, detail="Missing code from Epic")
 
     try:
         token_response = EpicEHR.exchange_code_for_token(code)
         access_token = token_response.get("access_token")
 
         if not access_token:
-            raise HTTPException(status_code=400, detail="Access token not received")
+            raise HTTPException(status_code=500, detail="No access_token returned")
 
-        request.session["epic_access_token"] = access_token
-        return HTMLResponse(
-            content="<html><body><h1>Login Successful</h1><p>You can close this window.</p></body></html>",
-            status_code=200,
-        )
+        # For sandbox: redirect with token to frontend
+        redirect_url = f"http://localhost:3000/search/epic?token={access_token}"
+        return RedirectResponse(redirect_url)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Token exchange failed: {str(e)}")
+
 
 @router.get("/logout")
 async def logout(request: Request):

@@ -31,11 +31,10 @@ const FrontPage = () => {
         </button>
 
         <button
-          onClick={() => navigate('/search/epic')}
-          className="bg-white shadow-lg rounded-lg p-4 hover:shadow-xl transition w-22 h-22 flex items-center justify-center"
-          aria-label="Search Epic Patients"
+          onClick={() => navigate('/epic-login')}
+          className="inline-flex items-center justify-center bg-white shadow-lg rounded-lg p-1 hover:shadow-xl transition w-14 h-14"
         >
-          <img src={epicLogo} alt="Epic" className="w-20 h-20 object-contain" />
+           <img src={epicLogo} alt="Epic" className="max-w-full max-h-full object-contain" />
         </button>
       </div>
     </div>
