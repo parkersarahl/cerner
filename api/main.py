@@ -14,6 +14,7 @@ from starlette.middleware.sessions import SessionMiddleware
 import os
 
 app = FastAPI()
+app.include_router(auth.router, prefix="/api")
 
 # Enable CORS for your frontend
 app.add_middleware(
