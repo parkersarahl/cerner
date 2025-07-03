@@ -8,7 +8,7 @@ EPIC_CLIENT_ID = os.getenv("EPIC_CLIENT_ID")
 EPIC_REDIRECT_URI = os.getenv("EPIC_REDIRECT_URI")
 EPIC_AUTH_URL = os.getenv("EPIC_AUTH_URL")
 EPIC_TOKEN_URL = os.getenv("EPIC_TOKEN_URL")
-EPIC_SCOPES = "lauch openid fhirUser profile user/*.read patient/*.read offline_access"
+EPIC_SCOPES= "openid fhirUser profile user/*.read offline_access"
 EPIC_CLIENT_SECRET = os.getenv("EPIC_CLIENT_SECRET")
 
 EPIC_ISSUER = EPIC_CLIENT_ID  # usually the client ID
