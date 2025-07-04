@@ -1,10 +1,11 @@
 # routers/auth.py
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Query, Header
 from fastapi.responses import RedirectResponse, HTMLResponse
 import urllib.parse
 from services.ehr.epic import EpicEHR
 import secrets
+import httpx
 
 
 from config import (
@@ -12,6 +13,7 @@ from config import (
     EPIC_REDIRECT_URI,
     EPIC_AUTH_URL,
     EPIC_SCOPES,
+    EPIC_FHIR_BASE_URL,
     EPIC_TOKEN_URL,
     EPIC_CLIENT_SECRET,
 )
@@ -60,6 +62,28 @@ async def epic_callback(request: Request):
         print("Exception during token exchange:", str(e))
         raise HTTPException(status_code=500, detail=f"Token exchange failed: {str(e)}")
 
+
+@router.get("/epic/patient")
+async def search_patient_epic(
+    name: str = Query(...),
+    authorization: str = Header(..., alias="Authorization")
+):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=400, detail="Missing Bearer token")
+
+    token = authorization.split(" ")[1]
+    url = f"{EPIC_FHIR_BASE_URL}/Patient?name={name}"
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/fhir+json"
+        })
+
+    if resp.status_code != 200:
+        raise HTTPException(status_code=resp.status_code, detail=resp.text)
+
+    return resp.json()
 
 @router.get("/logout")
 async def logout(request: Request):

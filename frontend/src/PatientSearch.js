@@ -31,15 +31,13 @@ const PatientSearch = () => {
       try {
         // Example: search patients by name in Epic sandbox FHIR
         const epicResponse = await axios.get(
-          `https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Patient?name=${encodeURIComponent(name)}`,
+          `/api/epic/patient?name=${encodeURIComponent(name)}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
-              Accept: 'application/fhir+json',
             },
           }
         );
-
         const entries = epicResponse.data.entry || [];
         const patients = entries.map((e) => {
           const resource = e.resource;
