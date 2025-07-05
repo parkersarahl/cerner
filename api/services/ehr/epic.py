@@ -29,7 +29,7 @@ class EpicEHR(EHRVendor):
             "code": code,
             "redirect_uri": EPIC_REDIRECT_URI,
             "client_id": EPIC_CLIENT_ID,
-            "client_secret": EPIC_CLIENT_SECRET,
+            #"client_secret": EPIC_CLIENT_SECRET,
         }
 
         headers = {

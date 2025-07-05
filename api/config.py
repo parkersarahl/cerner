@@ -10,7 +10,7 @@ EPIC_AUTH_URL = os.getenv("EPIC_AUTH_URL")
 EPIC_TOKEN_URL = os.getenv("EPIC_TOKEN_URL")
 EPIC_FHIR_BASE_URL = os.getenv("EPIC_FHIR_BASE_URL")
 EPIC_SCOPES= "openid fhirUser profile user/*.read offline_access"
-EPIC_CLIENT_SECRET = os.getenv("EPIC_CLIENT_SECRET")
+EPIC_CLIENT_SECRET = os.getenv("EPIC_SECRET")
 
 EPIC_ISSUER = EPIC_CLIENT_ID  # usually the client ID
 
