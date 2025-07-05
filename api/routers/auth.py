@@ -6,6 +6,7 @@ import urllib.parse
 from services.ehr.epic import EpicEHR
 import secrets
 import httpx
+from mock_epic_data import mock_patients, mock_document_reference
 
 
 from config import (
@@ -71,19 +72,36 @@ async def search_patient_epic(
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=400, detail="Missing Bearer token")
 
-    token = authorization.split(" ")[1]
-    url = f"{EPIC_FHIR_BASE_URL}/Patient?name={name}"
+    filtered = [
+    patient for patient in mock_patients["patients"]
+    if name.lower() in " ".join(
+        patient["name"][0].get("given", []) +
+        [patient["name"][0].get("family", "")]
+    ).lower()
+]
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(url, headers={
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/fhir+json"
-        })
+    return {
+    "resourceType": "Bundle",
+    "type": "searchset",
+    "total": len(filtered),
+    "entry": [
+        { "fullUrl": f"urn:uuid:{patient['id']}", "resource": patient }
+        for patient in filtered
+    ]
+}
 
-    if resp.status_code != 200:
-        raise HTTPException(status_code=resp.status_code, detail=resp.text)
-
-    return resp.json()
+@router.get("/epic/documentReferences")
+async def get_document_references(patientId: str = Query(...)):
+    # Filter documents for the given patient
+    filtered_docs = [
+        doc for doc in mock_document_reference
+        if doc["subject"]["reference"] == f"Patient/{patientId}"
+    ]
+    return {
+        "resourceType": "Bundle",
+        "type": "collection",
+        "entry": [{"resource": doc} for doc in filtered_docs]
+    }
 
 @router.get("/logout")
 async def logout(request: Request):
