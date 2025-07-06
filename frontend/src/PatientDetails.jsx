@@ -7,6 +7,7 @@ const PatientDetail = () => {
   const [radiologyReports, setRadiologyReports] = useState([]);
   const [clinicalNotes, setClinicalNotes] = useState([]);
   const [labReports, setLabReports] = useState([]);
+  const [patient, setPatient] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -18,7 +19,7 @@ const PatientDetail = () => {
 
         const isEpicMock = patientId.startsWith('mock-');
 
-        const [radiologyRes, labRes, notesRes] = await Promise.all([
+        const [radiologyRes, labRes, notesRes, patientRes] = await Promise.all([
           axios.get(
             isEpicMock
               ? `/api/epic/documentReferences?patientId=${patientId}&type=radiology`
@@ -33,7 +34,12 @@ const PatientDetail = () => {
             isEpicMock
               ? `/api/epic/documentReferences?patientId=${patientId}&type=clinical`
               : `/api/cerner/diagnostic-reports/notes?patient=${patientId}`
-        ),
+        ),  
+          axios.get(
+            isEpicMock
+              ? `/api/epic/patient/${patientId}`
+              : `/api/cerner/patient/${patientId}`
+          ),
         ]);
 
 
@@ -43,6 +49,7 @@ const PatientDetail = () => {
         setClinicalNotes(getResources(notesRes.data));
         setRadiologyReports(getResources(radiologyRes.data));
         setLabReports(getResources(labRes.data));
+        setPatient(patientRes.data);
       } catch (err) {
         setError('Failed to load patient resources');
         console.error(err);
@@ -132,6 +139,16 @@ const PatientDetail = () => {
   return (
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-4">Patient Details</h2>
+      {patient && (
+        <div className="mb-4">
+          <p className="text-lg">
+            <strong>Name:</strong> {patient.name?.[0]?.given?.join(' ')} {patient.name?.[0]?.family}
+          </p>
+          <p className="text-lg">
+            <strong>Date of Birth:</strong> {new Date(patient.birthDate).toLocaleDateString('en-US')}
+          </p>
+        </div>
+    )}
       {error && <p className="text-red-600">{error}</p>}
 
       <section className="mb-6">

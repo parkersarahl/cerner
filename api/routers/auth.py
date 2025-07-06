@@ -1,13 +1,11 @@
 # routers/auth.py
 
-from fastapi import APIRouter, Request, HTTPException, Query, Header
+from fastapi import APIRouter, Path, Request, HTTPException, Query, Header
 from fastapi.responses import RedirectResponse, StreamingResponse
 import io
-import base64
 import urllib.parse
 from services.ehr.epic import EpicEHR
 import secrets
-import httpx
 from mock_epic_data import mock_patients, mock_document_reference, mock_binary_files
 
 
@@ -16,9 +14,6 @@ from config import (
     EPIC_REDIRECT_URI,
     EPIC_AUTH_URL,
     EPIC_SCOPES,
-    EPIC_FHIR_BASE_URL,
-    EPIC_TOKEN_URL,
-    EPIC_CLIENT_SECRET,
 )
 
 from utils.epic_helpers import (
@@ -97,6 +92,14 @@ async def search_patient_epic(
         for patient in filtered
     ]
 }
+
+@router.get("/epic/patient/{patient_id}")
+async def get_mock_patient_by_id(patient_id: str,):
+    for patient in mock_patients["patients"]:
+        if patient["id"] == patient_id:
+            return patient
+    raise HTTPException(status_code=404, detail="Patient not found")
+
 
 @router.get("/epic/documentReferences")
 def get_mock_documents(patientId: str, type: str = Query(...)):
