@@ -1,12 +1,14 @@
 # routers/auth.py
 
 from fastapi import APIRouter, Request, HTTPException, Query, Header
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
+import io
+import base64
 import urllib.parse
 from services.ehr.epic import EpicEHR
 import secrets
 import httpx
-from mock_epic_data import mock_patients, mock_document_reference
+from mock_epic_data import mock_patients, mock_document_reference, mock_binary_files
 
 
 from config import (
@@ -17,6 +19,12 @@ from config import (
     EPIC_FHIR_BASE_URL,
     EPIC_TOKEN_URL,
     EPIC_CLIENT_SECRET,
+)
+
+from utils.epic_helpers import (
+    get_lab_documents,
+    get_radiology_documents,
+    get_clinical_notes,
 )
 
 router = APIRouter()
@@ -91,17 +99,36 @@ async def search_patient_epic(
 }
 
 @router.get("/epic/documentReferences")
-async def get_document_references(patientId: str = Query(...)):
-    # Filter documents for the given patient
-    filtered_docs = [
-        doc for doc in mock_document_reference
-        if doc["subject"]["reference"] == f"Patient/{patientId}"
-    ]
+def get_mock_documents(patientId: str, type: str = Query(...)):
+    if type == "lab":
+        documents = get_lab_documents(patientId)
+    elif type == "radiology":
+        documents = get_radiology_documents(patientId)
+    elif type == "clinical":
+        documents = get_clinical_notes(patientId)
+    else:
+        documents = []
+
     return {
         "resourceType": "Bundle",
-        "type": "collection",
-        "entry": [{"resource": doc} for doc in filtered_docs]
+        "type": "searchset",
+        "entry": [{"resource": doc} for doc in documents],
+        "total": len(documents),
     }
+
+@router.get("/api/epic/binary/{binary_id}")
+def get_epic_binary(binary_id: str):
+    if binary_id not in mock_binary_files:
+        raise HTTPException(status_code=404, detail="Binary resource not found")
+
+    file_data = mock_binary_files[binary_id]
+
+    return StreamingResponse(
+        io.BytesIO(file_data["content"]),
+        media_type=file_data.get("content_type", "application/pdf"),
+        headers={"Content-Disposition": f"inline; filename={binary_id}.pdf"},
+    )
+
 
 @router.get("/logout")
 async def logout(request: Request):

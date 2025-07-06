@@ -1,3 +1,18 @@
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import io
+import base64
+
+def generate_base64_pdf(text: str = "Hello PDF") -> str:
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    c.setFont("Helvetica", 12)
+    c.drawString(100, 750, text)
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return base64.b64encode(buffer.read()).decode("utf-8")
+
 # Mock Epic FHIR Bundle with 10 patients
 mock_patients = {
     "patients": [
@@ -137,3 +152,18 @@ mock_document_reference = {
     }
   ]
 }
+mock_binary_files = {
+    "lab-mock-01": {
+        "content": base64.b64decode(generate_base64_pdf("Lab Report: CBC normal")),
+        "content_type": "application/pdf"
+    },
+    "rad-mock-01": {
+        "content": base64.b64decode(generate_base64_pdf("Radiology Report: Chest X-ray")),
+        "content_type": "application/pdf"
+    },
+    "note-mock-01": {
+        "content": base64.b64decode(generate_base64_pdf("Clinical Note: Annual wellness visit")),
+        "content_type": "application/pdf"
+    }
+}
+

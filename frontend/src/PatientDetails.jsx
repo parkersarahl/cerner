@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
-const PatientDetail = ({ patientID }) => {
+const PatientDetail = () => {
   const { patientId } = useParams();
   const [radiologyReports, setRadiologyReports] = useState([]);
+  const [clinicalNotes, setClinicalNotes] = useState([]);
   const [labReports, setLabReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -15,14 +16,31 @@ const PatientDetail = ({ patientID }) => {
       try {
         setError('');
 
-        const [radiologyRes, labRes] = await Promise.all([
-          axios.get(`/api/cerner/diagnostic-reports/radiology?patient=${patientId}`),
-          axios.get(`/api/cerner/diagnostic-reports/labs?patient=${patientId}`),
+        const isEpicMock = patientId.startsWith('mock-');
+
+        const [radiologyRes, labRes, notesRes] = await Promise.all([
+          axios.get(
+            isEpicMock
+              ? `/api/epic/documentReferences?patientId=${patientId}&type=radiology`
+              : `/api/cerner/diagnostic-reports/radiology?patient=${patientId}`
+          ),
+          axios.get(
+            isEpicMock
+              ? `/api/epic/documentReferences?patientId=${patientId}&type=lab`
+              : `/api/cerner/diagnostic-reports/labs?patient=${patientId}`
+          ),
+          axios.get(
+            isEpicMock
+              ? `/api/epic/documentReferences?patientId=${patientId}&type=clinical`
+              : `/api/cerner/diagnostic-reports/notes?patient=${patientId}`
+        ),
         ]);
+
 
         const getResources = (bundle) =>
           bundle?.entry?.map((e) => e.resource) || [];
 
+        setClinicalNotes(getResources(notesRes.data));
         setRadiologyReports(getResources(radiologyRes.data));
         setLabReports(getResources(labRes.data));
       } catch (err) {
@@ -37,35 +55,42 @@ const PatientDetail = ({ patientID }) => {
   }, [patientId]);
 
   const ALLOWED_ACCEPTS = [
-    "application/pdf",
-    "image/jpeg",
-    "application/dicom",
-    "application/fhir+xml",
-    "application/fhir+json",
-    "*/*",
+    'application/pdf',
+    'image/jpeg',
+    'application/dicom',
+    'application/fhir+xml',
+    'application/fhir+json',
+    '*/*',
   ];
 
   const handleResourceClick = (report) => {
-    const form = report?.presentedForm?.[0];
+    const attachment = report?.content?.[0]?.attachment;
+    const url = attachment?.url;
+    let contentType = attachment?.contentType || 'application/pdf';
 
-    if (form?.url) {
-      const url = new URL(form.url);
-      const binaryId = url.pathname.split('/').pop();
-      let contentType = form.contentType || 'application/pdf';
-
-      if (!ALLOWED_ACCEPTS.includes(contentType)) {
-        contentType = 'application/pdf';
-      }
-
-      window.open(
-        `http://localhost:8000/api/cerner/binary/${binaryId}?accept=${encodeURIComponent(contentType)}`,
-        '_blank'
-      );
-    } else if (form?.data) {
-      // Handle embedded base64 blobs (not shown here)
-    } else {
+    if (!url) {
       setError('No report file available for this resource.');
+      return;
     }
+
+    if (!ALLOWED_ACCEPTS.includes(contentType)) {
+      contentType = 'application/pdf';
+    }
+
+    const binaryId = url.split('/').pop();
+
+    const isEpicMock = patientId.startsWith('mock-');
+
+    window.open(
+      `${
+        isEpicMock
+          ? `http://localhost:8000/api/epic/binary/${binaryId}`
+          : `http://localhost:8000/api/cerner/binary/${binaryId}?accept=${encodeURIComponent(
+              contentType
+            )}`
+      }`,
+      '_blank'
+    );
   };
 
   const renderItem = (item, type) => {
@@ -73,9 +98,15 @@ const PatientDetail = ({ patientID }) => {
     if (!id) return null;
 
     const label =
-      item.code?.text || item.code?.coding?.[0]?.display || item.title || `${type} resource`;
+      item.type?.text ||
+      item.type?.coding?.[0]?.display ||
+      item.title ||
+      `${type} resource`;
 
-    const date = item.issued ? new Date(item.issued).toLocaleDateString('en-US') : '';
+    const date = item.date || item.issued;
+    const formattedDate = date
+      ? new Date(date).toLocaleDateString('en-US')
+      : '';
 
     return (
       <li key={`${type}-${id}`} className="my-1">
@@ -83,7 +114,7 @@ const PatientDetail = ({ patientID }) => {
           onClick={() => handleResourceClick(item)}
           className="text-blue-600 hover:underline focus:outline-none"
         >
-          {label} ({date})
+          {label} ({formattedDate})
         </button>
       </li>
     );
@@ -114,6 +145,13 @@ const PatientDetail = ({ patientID }) => {
         <h3 className="text-lg font-medium">Lab Reports</h3>
         <ul className="list-disc ml-6">
           {labReports.map((r) => renderItem(r, 'LabReport'))}
+        </ul>
+      </section>
+      
+      <section className="mb-6">
+        <h3 className="text-lg font-medium">Clinical Notes</h3>
+        <ul className="list-disc ml-6">
+          {clinicalNotes.map((r) => renderItem(r, 'ClinicalNote'))}
         </ul>
       </section>
     </div>
