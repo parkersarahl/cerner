@@ -1,14 +1,14 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, APIRouter
 import httpx
 from fastapi.responses import StreamingResponse
 import io
 
-app = FastAPI()
+router = APIRouter()
 
 FHIR_BASE_URL = "https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d"
 
 
-@app.get("/api/patients")
+@router.get("/api/patients")
 async def search_patients(name: str = Query(..., description="Name of the patient to search")):
     url = f"{FHIR_BASE_URL}/Patient?name={name}"
 
@@ -41,7 +41,7 @@ async def search_patients(name: str = Query(..., description="Name of the patien
 
     return {"patients": patients}
 
-@app.get("/api/cerner/diagnostic-reports/radiology")
+@router.get("/cerner/diagnostic-reports/radiology")
 async def get_diagnostic_reports(patient: str):
     url = f"{FHIR_BASE_URL}/DiagnosticReport?patient={patient}&category=http://terminology.hl7.org/CodeSystem/v2-0074|RAD"
     params = {"patient": patient}
@@ -68,7 +68,7 @@ async def get_diagnostic_reports(patient: str):
     return {"entry": filtered_entries}
 
 
-@app.get("/api/cerner/patient/{patient_id}")
+@router.get("/cerner/patient/{patient_id}")
 async def get_patient_by_id(patient_id: str):
     url = f"{FHIR_BASE_URL}/Patient/{patient_id}"
     async with httpx.AsyncClient() as client:
@@ -77,7 +77,7 @@ async def get_patient_by_id(patient_id: str):
         raise HTTPException(status_code=resp.status_code, detail=f"Error from FHIR API: {resp.text}")
     return resp.json()
 
-@app.get("/api/cerner/diagnostic-reports/labs")
+@router.get("/cerner/diagnostic-reports/labs")
 async def get_lab_reports(patient: str):
     url = f"{FHIR_BASE_URL}/DiagnosticReport"
     params = {
@@ -104,7 +104,7 @@ VALID_ACCEPTS = {
     "*/*",
 }
 
-@app.get("/api/cerner/binary/{binary_id}")
+@router.get("/cerner/binary/{binary_id}")
 async def proxy_binary(binary_id: str, accept: str = Query("application/pdf")):
     if accept not in VALID_ACCEPTS:
         accept = "application/pdf"

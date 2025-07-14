@@ -26,7 +26,7 @@ router = APIRouter()
 
 state = secrets.token_urlsafe(16)  # Generate a secure random state
 
-@router.get("/login")
+@router.get("/epic/login")
 async def login_to_epic():
     query = urllib.parse.urlencode({
         "response_type": "code",
@@ -119,7 +119,7 @@ def get_mock_documents(patientId: str, type: str = Query(...)):
         "total": len(documents),
     }
 
-@router.get("/api/epic/binary/{binary_id}")
+@router.get("/epic/binary/{binary_id}")
 def get_epic_binary(binary_id: str):
     if binary_id not in mock_binary_files:
         raise HTTPException(status_code=404, detail="Binary resource not found")
