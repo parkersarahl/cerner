@@ -33,7 +33,7 @@ const PatientDetail = () => {
           axios.get(
             isEpicMock
               ? `/api/epic/documentReferences?patientId=${patientId}&type=clinical`
-              : `/api/cerner/diagnostic-reports/notes?patient=${patientId}`
+              : `/api/cerner/diagnostic-reports/clinical?patient=${patientId}`
         ),  
           axios.get(
             isEpicMock
@@ -71,34 +71,54 @@ const PatientDetail = () => {
   ];
 
   const handleResourceClick = (report) => {
-    const attachment = report?.content?.[0]?.attachment;
-    const url = attachment?.url;
-    let contentType = attachment?.contentType || 'application/pdf';
+  if (!report) {
+    setError("No report data available for this item.");
+    return;
+  }
 
-    if (!url) {
-      setError('No report file available for this resource.');
-      return;
-    }
+  // Try to find attachment either from content or presentedForm
+  let attachment = null;
 
-    if (!ALLOWED_ACCEPTS.includes(contentType)) {
-      contentType = 'application/pdf';
-    }
+  if (report.content && report.content.length > 0) {
+    attachment = report.content[0].attachment;
+  } else if (report.presentedForm && report.presentedForm.length > 0) {
+    attachment = report.presentedForm[0]; // presentedForm items are attachments directly
+  }
 
-    const binaryId = url.split('/').pop();
+  if (!attachment) {
+    setError("No report file available for this resource.");
+    return;
+  }
 
-    const isEpicMock = patientId.startsWith('mock-');
+  const url = attachment.url;
+  let contentType = attachment.contentType || "application/pdf";
 
-    window.open(
-      `${
-        isEpicMock
-          ? `http://localhost:8000/api/epic/binary/${binaryId}`
-          : `http://localhost:8000/api/cerner/binary/${binaryId}?accept=${encodeURIComponent(
-              contentType
-            )}`
-      }`,
-      '_blank'
-    );
-  };
+  if (!url) {
+    setError("No report file URL available for this resource.");
+    return;
+  }
+
+  if (!ALLOWED_ACCEPTS.includes(contentType)) {
+    contentType = "application/pdf";
+  }
+
+  const binaryIdMatch = url.match(/Binary\/([^/]+)$/);
+  const binaryId = binaryIdMatch ? binaryIdMatch[1] : url; // fallback to full URL
+
+  const isEpicMock = patientId.startsWith("mock-");
+
+  window.open(
+    `${
+      isEpicMock
+        ? `http://localhost:8000/api/epic/binary/${binaryId}`
+        : `http://localhost:8000/api/cerner/binary/${binaryId}?accept=${encodeURIComponent(
+            contentType
+          )}`
+    }`,
+    "_blank"
+  );
+};
+
 
   const renderItem = (item, type) => {
     const id = item.id;
