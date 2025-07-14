@@ -2,12 +2,6 @@ from getpass import getuser
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from utils.auth import (
-    verify_password,
-    create_access_token,
-    decode_access_token,
-    hash_password  
-)
 
 from routers import auth
 from starlette.middleware.sessions import SessionMiddleware

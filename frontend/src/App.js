@@ -4,6 +4,7 @@ import FrontPage from './FrontPage';
 import PatientSearch from './PatientSearch';
 import PatientDetails from './PatientDetails';
 import EpicLogin from './EpicLogin';
+import Login from './Login';
 import './index.css'; // Ensure you have your styles imported
 
 function App() {
@@ -11,7 +12,8 @@ function App() {
    <div className="min-h-screen bg-gray-100 text-gray-900 p-4">
     <Router>
       <Routes>
-        <Route path="/" element={<FrontPage />} />
+        <Route path="/" element={<Login />} />\
+        <Route path = "/frontpage" element={<FrontPage />} />
         <Route path="/search/:source" element={<PatientSearch />} />
         <Route path="/epic-login" element={<EpicLogin />} />
         <Route path="/patients/:patientId" element={<PatientDetails />} />
