@@ -33,7 +33,7 @@ const PatientDetail = () => {
           axios.get(
             isEpicMock
               ? `/api/epic/documentReferences?patientId=${patientId}&type=clinical`
-              : `/api/cerner/diagnostic-reports/notes?patient=${patientId}`
+              : `/api/cerner/diagnostic-reports/clinical?patient=${patientId}`
         ),  
           axios.get(
             isEpicMock
@@ -70,35 +70,64 @@ const PatientDetail = () => {
     '*/*',
   ];
 
-  const handleResourceClick = (report) => {
-    const attachment = report?.content?.[0]?.attachment;
-    const url = attachment?.url;
-    let contentType = attachment?.contentType || 'application/pdf';
+  const handleResourceClick = async (report) => {
+  if (!report) {
+    setError("No report data available for this item.");
+    return;
+  }
 
-    if (!url) {
-      setError('No report file available for this resource.');
-      return;
-    }
+  let attachment = null;
 
-    if (!ALLOWED_ACCEPTS.includes(contentType)) {
-      contentType = 'application/pdf';
-    }
+  if (report.content && report.content.length > 0) {
+    attachment = report.content[0].attachment;
+  } else if (report.presentedForm && report.presentedForm.length > 0) {
+    attachment = report.presentedForm[0];
+  }
 
-    const binaryId = url.split('/').pop();
+  if (!attachment) {
+    setError("No report file available for this resource.");
+    return;
+  }
 
-    const isEpicMock = patientId.startsWith('mock-');
+  const url = attachment.url;
+  let contentType = attachment.contentType || "application/pdf";
 
-    window.open(
-      `${
-        isEpicMock
-          ? `http://localhost:8000/api/epic/binary/${binaryId}`
-          : `http://localhost:8000/api/cerner/binary/${binaryId}?accept=${encodeURIComponent(
-              contentType
-            )}`
-      }`,
-      '_blank'
-    );
-  };
+  if (!url) {
+    setError("No report file URL available for this resource.");
+    return;
+  }
+
+  if (!ALLOWED_ACCEPTS.includes(contentType)) {
+    contentType = "application/pdf";
+  }
+
+  const isEpicMock = patientId.startsWith("mock-");
+  const isAbsoluteUrl = url.startsWith("http://") || url.startsWith("https://");
+
+  const finalUrl = isAbsoluteUrl
+    ? url
+    : isEpicMock
+    ? `/api/epic/binary/${url}`
+    : `/api/cerner/binary/${url}`;
+
+  try {
+    const response = await axios.get(finalUrl, {
+      responseType: "blob",
+      headers: {
+        Accept: contentType,
+      },
+    });
+
+    const blob = new Blob([response.data], { type: contentType });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, "_blank");
+  } catch (err) {
+    setError("Failed to open report file.");
+    console.error(err);
+  }
+};
+
+
 
   const renderItem = (item, type) => {
     const id = item.id;

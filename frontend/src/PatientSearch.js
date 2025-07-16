@@ -1,73 +1,66 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
-import { useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+//import {useNavigate} from 'react-router-dom';
 
 const PatientSearch = () => {
-  const [searchParams] = useSearchParams();
+  const { source } = useParams(); // source will be "epic" or "cerner"
   const [name, setName] = useState('');
   const [results, setResults] = useState([]);
   const [error, setError] = useState('');
-  const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // On mount, check if token exists in query params (Epic OAuth)
-    const urlToken = searchParams.get('token');
-    if (urlToken) {
-      setToken(urlToken);
-      localStorage.setItem('epic_token', urlToken);
-    } else {
-      const stored = localStorage.getItem('epic_token');
-      if (stored) setToken(stored);
-    }
-  }, [searchParams]);
+  const token = localStorage.getItem('token');
+
+  //const navigate = useNavigate();
 
   const handleSearch = async () => {
     setError('');
     setLoading(true);
+    try {
+      let url;
+      if (source === 'epic') {
+        url = `/api/epic/patient?name=${encodeURIComponent(name)}`;
+      } else if (source === 'cerner') {
+        url = `/api/cerner/patient?name=${encodeURIComponent(name)}`;
+      } else {
+        throw new Error('Unsupported EHR source');
+      } 
 
-    if (token) {
-      // Use Epic sandbox FHIR API directly
-      try {
-        // Example: search patients by name in Epic sandbox FHIR
-        const epicResponse = await axios.get(
-          `/api/epic/patient?name=${encodeURIComponent(name)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const entries = epicResponse.data.entry || [];
-        const patients = entries.map((e) => {
-          const resource = e.resource;
-          return {
-            id: resource.id,
-            name:
-              resource.name?.[0]?.text ||
-              `${resource.name?.[0]?.given?.join(' ') || ''} ${resource.name?.[0]?.family || ''}`.trim() ||
-              'Unnamed',
-            birthDate: resource.birthDate || 'N/A',
-            gender: resource.gender || 'Unknown',
-          };
-        });
-        setResults(patients);
-      } catch (err) {
-        setError('Failed to fetch from Epic sandbox. Make sure token is valid.');
-        console.error(err);
-      }
-    } else {
-      // Use your backend patient search
-      try {
-        const response = await axios.get(`/api/patients?name=${encodeURIComponent(name)}`);
-        setResults(response.data.patients || []);
-      } catch (err) {
-        console.error(err);
-        setError(err.response?.data?.detail || 'Search failed');
-      }
+      const headers = token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined;
+
+      const response = await axios.get(url, { headers });
+      //const entries = response.data.entry || response.data.patients || [];
+
+      let patients = [];
+
+      if (source === 'epic') {
+      const entries = response.data.entry || [];
+      patients = entries.map((e) => {
+        const resource = e.resource || {};
+        const nameField = resource.name?.[0];
+        const fullName =
+          nameField?.text ||
+          `${(nameField?.given || []).join(' ')} ${nameField?.family || ''}`.trim();
+        return {
+          id: resource.id,
+          name: fullName || 'Unnamed',
+          birthDate: resource.birthDate || 'N/A',
+          gender: resource.gender || 'Unknown',
+        };
+      });
+    } else if (source === 'cerner') {
+      patients = response.data.patients || [];
     }
-
-    setLoading(false);
+      setResults(patients);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to search for patients');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -109,6 +102,7 @@ const PatientSearch = () => {
       </ul>
     </div>
   );
-};
+}; 
 
 export default PatientSearch;
+
