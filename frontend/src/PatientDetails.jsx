@@ -70,19 +70,18 @@ const PatientDetail = () => {
     '*/*',
   ];
 
-  const handleResourceClick = (report) => {
+  const handleResourceClick = async (report) => {
   if (!report) {
     setError("No report data available for this item.");
     return;
   }
 
-  // Try to find attachment either from content or presentedForm
   let attachment = null;
 
   if (report.content && report.content.length > 0) {
     attachment = report.content[0].attachment;
   } else if (report.presentedForm && report.presentedForm.length > 0) {
-    attachment = report.presentedForm[0]; // presentedForm items are attachments directly
+    attachment = report.presentedForm[0];
   }
 
   if (!attachment) {
@@ -102,22 +101,32 @@ const PatientDetail = () => {
     contentType = "application/pdf";
   }
 
-  const binaryIdMatch = url.match(/Binary\/([^/]+)$/);
-  const binaryId = binaryIdMatch ? binaryIdMatch[1] : url; // fallback to full URL
-
   const isEpicMock = patientId.startsWith("mock-");
+  const isAbsoluteUrl = url.startsWith("http://") || url.startsWith("https://");
 
-  window.open(
-    `${
-      isEpicMock
-        ? `http://localhost:8000/api/epic/binary/${binaryId}`
-        : `http://localhost:8000/api/cerner/binary/${binaryId}?accept=${encodeURIComponent(
-            contentType
-          )}`
-    }`,
-    "_blank"
-  );
+  const finalUrl = isAbsoluteUrl
+    ? url
+    : isEpicMock
+    ? `/api/epic/binary/${url}`
+    : `/api/cerner/binary/${url}`;
+
+  try {
+    const response = await axios.get(finalUrl, {
+      responseType: "blob",
+      headers: {
+        Accept: contentType,
+      },
+    });
+
+    const blob = new Blob([response.data], { type: contentType });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, "_blank");
+  } catch (err) {
+    setError("Failed to open report file.");
+    console.error(err);
+  }
 };
+
 
 
   const renderItem = (item, type) => {
