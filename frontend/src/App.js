@@ -12,7 +12,7 @@ function App() {
    <div className="min-h-screen bg-gray-100 text-gray-900 p-4">
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />\
+        <Route path="/login" element={<Login />} />\
         <Route path = "/frontpage" element={<FrontPage />} />
         <Route path="/search/:source" element={<PatientSearch />} />
         <Route path="/epic-login" element={<EpicLogin />} />

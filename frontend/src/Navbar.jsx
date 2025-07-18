@@ -12,7 +12,7 @@ const Navbar = () => {
     sessionStorage.clear();
 
     // Redirect to login or home
-    navigate('/FrontPage');
+    navigate('/login');
   };
 
   return (
