@@ -7,4 +7,12 @@ module.exports = {
     extend: {},
   },
   plugins: [],
+  
+  theme: {
+    extend: {
+      colors: {
+        connectBlue: '#22689F',
+      },
+    },
+  },
 };

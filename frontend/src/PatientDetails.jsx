@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import Navbar from './Navbar';
 
 const PatientDetail = () => {
   const { patientId } = useParams();
@@ -166,6 +167,8 @@ const PatientDetail = () => {
   }
 
   return (
+    <>
+      <Navbar />
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-4">Patient Details</h2>
       {patient && (
@@ -201,6 +204,7 @@ const PatientDetail = () => {
         </ul>
       </section>
     </div>
+    </>
   );
 };
 
