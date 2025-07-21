@@ -4,7 +4,7 @@ import io
 import urllib.parse
 import secrets
 
-from utils.auth import get_current_user  # ⬅️ Import protection
+from utils.auth import get_current_user, require_role  # ⬅️ Import protection
 from services.ehr.epic import EpicEHR
 from mock_epic_data import mock_patients, mock_document_reference, mock_binary_files
 from config import (
@@ -64,7 +64,7 @@ async def epic_callback(request: Request):
 @router.get("/epic/patient")
 async def search_patient_epic(
     name: str = Query(...),
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_role(["provider", "admin"]))
 ):
     filtered = [
         patient for patient in mock_patients["patients"]
@@ -100,7 +100,7 @@ async def get_mock_patient_by_id(
 def get_mock_documents(
     patientId: str,
     type: str = Query(...),
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_role(["provider", "admin"]))
 ):
     if type == "lab":
         documents = get_lab_documents(patientId)
@@ -122,7 +122,7 @@ def get_mock_documents(
 @router.get("/epic/binary/{binary_id}")
 def get_epic_binary(
     binary_id: str,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_role(["provider", "admin"]))
 ):
     if binary_id not in mock_binary_files:
         raise HTTPException(status_code=404, detail="Binary resource not found")
