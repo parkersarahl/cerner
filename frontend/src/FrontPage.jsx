@@ -2,14 +2,12 @@ import { useNavigate } from 'react-router-dom';
 import cernerLogo from './graphics/Cerner.png';
 import epicLogo from './graphics/Epic.png';
 import appLogo from './graphics/ConnectEHR_logo.png';
-import Navbar from './Navbar';
 
 const FrontPage = () => {
   const navigate = useNavigate();
 
   return (
     <>
-      <Navbar />
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-14">
       <img
         src={appLogo}

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import Navbar from './Navbar';
 
 const PatientDetail = () => {
   const { patientId } = useParams();
@@ -17,29 +16,40 @@ const PatientDetail = () => {
       setIsLoading(true);
       try {
         setError('');
+        const token = localStorage.getItem('token');
 
         const isEpicMock = patientId.startsWith('mock-');
+
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
 
         const [radiologyRes, labRes, notesRes, patientRes] = await Promise.all([
           axios.get(
             isEpicMock
               ? `/api/epic/documentReferences?patientId=${patientId}&type=radiology`
-              : `/api/cerner/diagnostic-reports/radiology?patient=${patientId}`
+              : `/api/cerner/diagnostic-reports/radiology?patient=${patientId}`, 
+              config
           ),
           axios.get(
             isEpicMock
               ? `/api/epic/documentReferences?patientId=${patientId}&type=lab`
-              : `/api/cerner/diagnostic-reports/labs?patient=${patientId}`
+              : `/api/cerner/diagnostic-reports/labs?patient=${patientId}`,
+              config
           ),
           axios.get(
             isEpicMock
               ? `/api/epic/documentReferences?patientId=${patientId}&type=clinical`
-              : `/api/cerner/diagnostic-reports/clinical?patient=${patientId}`
+              : `/api/cerner/diagnostic-reports/clinical?patient=${patientId}`,
+              config
         ),  
           axios.get(
             isEpicMock
               ? `/api/epic/patient/${patientId}`
-              : `/api/cerner/patient/${patientId}`
+              : `/api/cerner/patient/${patientId}`,
+              config
           ),
         ]);
 
@@ -90,7 +100,7 @@ const PatientDetail = () => {
     return;
   }
 
-  const url = attachment.url;
+  let url = attachment.url;
   let contentType = attachment.contentType || "application/pdf";
 
   if (!url) {
@@ -105,17 +115,28 @@ const PatientDetail = () => {
   const isEpicMock = patientId.startsWith("mock-");
   const isAbsoluteUrl = url.startsWith("http://") || url.startsWith("https://");
 
-  const finalUrl = isAbsoluteUrl
+   const finalUrl = isAbsoluteUrl
     ? url
     : isEpicMock
     ? `/api/epic/binary/${url}`
     : `/api/cerner/binary/${url}`;
 
+  // If absolute URL, extract binary_id from it if it points to your backend
+  if (isAbsoluteUrl && isEpicMock) {
+    const parts = url.split("/");
+    url = parts[parts.length - 1];  // e.g. 'rad-mock-01'
+  } else if (isAbsoluteUrl && !isEpicMock) {
+    const parts = url.split("/");
+    url = parts[parts.length - 1];
+  }
+  // If the URL is relative, prepend the API endpoint
   try {
+    const token = localStorage.getItem("token");
     const response = await axios.get(finalUrl, {
       responseType: "blob",
       headers: {
         Accept: contentType,
+        Authorization: `Bearer ${token}`,   // <-- Include auth token!
       },
     });
 
@@ -127,8 +148,6 @@ const PatientDetail = () => {
     console.error(err);
   }
 };
-
-
 
   const renderItem = (item, type) => {
     const id = item.id;
@@ -168,7 +187,6 @@ const PatientDetail = () => {
 
   return (
     <>
-      <Navbar />
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-4">Patient Details</h2>
       {patient && (

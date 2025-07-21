@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
-import Navbar from './Navbar';
-//import {useNavigate} from 'react-router-dom';
 
 const PatientSearch = () => {
   const { source } = useParams(); // source will be "epic" or "cerner"
@@ -66,7 +64,6 @@ const PatientSearch = () => {
 
   return (
     <>
-      <Navbar />
       <div className="p-4">
         <h2 className="text-xl font-semibold mb-4">Search Patients</h2>
         <div className="space-y-2">

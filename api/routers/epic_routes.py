@@ -1,21 +1,18 @@
-# routers/auth.py
-
-from fastapi import APIRouter, Path, Request, HTTPException, Query, Header
+from fastapi import APIRouter, Path, Request, HTTPException, Query, Header, Depends
 from fastapi.responses import RedirectResponse, StreamingResponse
 import io
 import urllib.parse
-from services.ehr.epic import EpicEHR
 import secrets
+
+from utils.auth import get_current_user  # ⬅️ Import protection
+from services.ehr.epic import EpicEHR
 from mock_epic_data import mock_patients, mock_document_reference, mock_binary_files
-
-
 from config import (
     EPIC_CLIENT_ID,
     EPIC_REDIRECT_URI,
     EPIC_AUTH_URL,
     EPIC_SCOPES,
 )
-
 from utils.epic_helpers import (
     get_lab_documents,
     get_radiology_documents,
@@ -23,9 +20,9 @@ from utils.epic_helpers import (
 )
 
 router = APIRouter()
+state = secrets.token_urlsafe(16)
 
-state = secrets.token_urlsafe(16)  # Generate a secure random state
-
+# Public
 @router.get("/epic/login")
 async def login_to_epic():
     query = urllib.parse.urlencode({
@@ -35,30 +32,27 @@ async def login_to_epic():
         "scope": EPIC_SCOPES,
         "state": state,
     })
-
     auth_url = f"{EPIC_AUTH_URL}?{query}"
-    print("🔍 Epic Auth URL:", auth_url)  # <-- Debug print here
-
+    print("🔍 Epic Auth URL:", auth_url)
     return RedirectResponse(auth_url)
 
+# Public
 @router.get("/epic/callback")
 async def epic_callback(request: Request):
     print("Callback route hit with query params:", dict(request.query_params))
-    
     code = request.query_params.get("code")
     if not code:
         raise HTTPException(status_code=400, detail="Missing code from Epic")
 
     try:
-        print("Calling token exchange with code:", code) #This line is for debugging
+        print("Calling token exchange with code:", code)
         token_response = EpicEHR.exchange_code_for_token(code)
-        print("Token response received:", token_response)  # << And this
+        print("Token response received:", token_response)
         access_token = token_response.get("access_token")
 
         if not access_token:
             raise HTTPException(status_code=500, detail="No access_token returned")
 
-        # For sandbox: redirect with token to frontend
         redirect_url = f"http://localhost:3000/search/epic?token={access_token}"
         return RedirectResponse(redirect_url)
 
@@ -66,43 +60,48 @@ async def epic_callback(request: Request):
         print("Exception during token exchange:", str(e))
         raise HTTPException(status_code=500, detail=f"Token exchange failed: {str(e)}")
 
-
+# ✅ Protected
 @router.get("/epic/patient")
 async def search_patient_epic(
     name: str = Query(...),
-    authorization: str = Header(..., alias="Authorization")
+    user: dict = Depends(get_current_user)
 ):
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=400, detail="Missing Bearer token")
-
     filtered = [
-    patient for patient in mock_patients["patients"]
-    if name.lower() in " ".join(
-        patient["name"][0].get("given", []) +
-        [patient["name"][0].get("family", "")]
-    ).lower()
-]
+        patient for patient in mock_patients["patients"]
+        if name.lower() in " ".join(
+            patient["name"][0].get("given", []) +
+            [patient["name"][0].get("family", "")]
+        ).lower()
+    ]
 
     return {
-    "resourceType": "Bundle",
-    "type": "searchset",
-    "total": len(filtered),
-    "entry": [
-        { "fullUrl": f"urn:uuid:{patient['id']}", "resource": patient }
-        for patient in filtered
-    ]
-}
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "total": len(filtered),
+        "entry": [
+            {"fullUrl": f"urn:uuid:{patient['id']}", "resource": patient}
+            for patient in filtered
+        ]
+    }
 
+# ✅ Protected
 @router.get("/epic/patient/{patient_id}")
-async def get_mock_patient_by_id(patient_id: str,):
+async def get_mock_patient_by_id(
+    patient_id: str,
+    user: dict = Depends(get_current_user)
+):
     for patient in mock_patients["patients"]:
         if patient["id"] == patient_id:
             return patient
     raise HTTPException(status_code=404, detail="Patient not found")
 
-
+# ✅ Protected
 @router.get("/epic/documentReferences")
-def get_mock_documents(patientId: str, type: str = Query(...)):
+def get_mock_documents(
+    patientId: str,
+    type: str = Query(...),
+    user: dict = Depends(get_current_user)
+):
     if type == "lab":
         documents = get_lab_documents(patientId)
     elif type == "radiology":
@@ -119,8 +118,12 @@ def get_mock_documents(patientId: str, type: str = Query(...)):
         "total": len(documents),
     }
 
+# ✅ Protected
 @router.get("/epic/binary/{binary_id}")
-def get_epic_binary(binary_id: str):
+def get_epic_binary(
+    binary_id: str,
+    user: dict = Depends(get_current_user)
+):
     if binary_id not in mock_binary_files:
         raise HTTPException(status_code=404, detail="Binary resource not found")
 
@@ -132,11 +135,8 @@ def get_epic_binary(binary_id: str):
         headers={"Content-Disposition": f"inline; filename={binary_id}.pdf"},
     )
 
+# Public
 @router.get("/logout")
 async def logout(request: Request):
-    """
-    Logs out the user by clearing the session.
-    """
     request.session.clear()
     return {"message": "Logged out successfully"}
-
