@@ -13,10 +13,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 # Fake user database
 fake_users_db = {
-    "clinician@example.com": {
-        "username": "clinician@example.com",
+    "provider@example.com": {
+        "username": "provider@example.com",
         "hashed_password": pwd_context.hash("securepassword"),
-        "role": "clinician"
+        "role": "provider"
+    },
+    "username@example.com": {
+        "username": "username@example.com",
+        "hashed_password": pwd_context.hash("securepassword2"),
+        "role": "guest"
     }
 }
 
@@ -32,7 +37,7 @@ def login(input: LoginInput):
 
     token_data = {
         "sub": input.username,
-        "role": user["role"],
+        "roles": [user["role"]],
         "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     }
 

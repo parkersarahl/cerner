@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse
-from utils.auth import get_current_user  # ✅ Import the auth dependency
+from utils.auth import get_current_user, require_role  # ✅ Import the auth dependency
 import httpx
 import io
 
@@ -20,7 +20,7 @@ VALID_ACCEPTS = {
 @router.get("/cerner/patient")
 async def search_patients(
     name: str = Query(..., description="Name of the patient to search"),
-    user=Depends(get_current_user)  # ✅ Protected
+    user: dict = Depends(require_role(["provider", "admin"]))  # ✅ Protected
 ):
     url = f"{FHIR_BASE_URL}/Patient?name={name}"
     async with httpx.AsyncClient() as client:
@@ -55,7 +55,7 @@ async def search_patients(
 @router.get("/cerner/patient/{patient_id}")
 async def get_patient_by_id(
     patient_id: str,
-    user=Depends(get_current_user)  # ✅ Protected
+    user: dict = Depends(require_role(["provider", "admin"]))  # ✅ Protected
 ):
     url = f"{FHIR_BASE_URL}/Patient/{patient_id}"
     async with httpx.AsyncClient() as client:
@@ -84,7 +84,7 @@ async def fetch_reports_by_category(patient: str, category_code: str):
 @router.get("/cerner/diagnostic-reports/radiology")
 async def get_radiology_reports(
     patient: str,
-    user=Depends(get_current_user)  # ✅ Protected
+    user: dict = Depends(require_role(["provider", "admin"]))  # ✅ Protected
 ):
     bundle = await fetch_reports_by_category(patient, "http://terminology.hl7.org/CodeSystem/v2-0074|RAD")
     filtered = []
@@ -103,7 +103,7 @@ async def get_radiology_reports(
 @router.get("/cerner/diagnostic-reports/labs")
 async def get_lab_reports(
     patient: str,
-    user=Depends(get_current_user)  # ✅ Protected
+    user: dict = Depends(require_role(["provider", "admin"]))  # ✅ Protected
 ):
     return await fetch_reports_by_category(patient, "http://terminology.hl7.org/CodeSystem/v2-0074|LAB")
 
@@ -111,7 +111,7 @@ async def get_lab_reports(
 @router.get("/cerner/diagnostic-reports/clinical")
 async def get_clinical_notes(
     patient: str,
-    user=Depends(get_current_user)  # ✅ Protected
+    user: dict = Depends(require_role(["provider", "admin"]))  # ✅ Protected
 ):
     bundle = await fetch_reports_by_category(patient, "http://loinc.org|LP29708-2")
     filtered = []
@@ -136,7 +136,7 @@ async def get_clinical_notes(
 async def proxy_binary(
     binary_id: str,
     accept: str = Query("application/pdf"),
-    user=Depends(get_current_user)  # ✅ Protected
+    user: dict = Depends(require_role(["provider", "admin"]))  # ✅ Protected
 ):
     if accept not in VALID_ACCEPTS:
         accept = "application/pdf"
