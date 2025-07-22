@@ -23,7 +23,6 @@ EPIC_AUTH_URL = EPIC_AUTH_URL
 class EpicEHR(EHRVendor):
     @staticmethod
     def exchange_code_for_token(code: str) -> dict:
-        print("🔥 exchange_code_for_token() was called!")  # Add this as the first line
         data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -36,18 +35,8 @@ class EpicEHR(EHRVendor):
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
-        # Print data being sent (for debugging)
-        print("Sending token exchange request with:", data)
-        print("Using token URL:", EPIC_TOKEN_URL)
-        print("Using redirect URI:", EPIC_REDIRECT_URI)
-        print("Using client ID:", EPIC_CLIENT_ID)
-        print("Using client secret:", (EPIC_CLIENT_SECRET[:4] + "...") if EPIC_CLIENT_SECRET else "None")
 
         response = requests.post(EPIC_TOKEN_URL, data=data, headers=headers)
-
-        # Print response status and body for debugging
-        print("Token exchange response status:", response.status_code)
-        print("Token exchange response body:", response.text)
 
         if response.status_code != 200:
             raise Exception(f"Token exchange failed: {response.status_code}, {response.text}")

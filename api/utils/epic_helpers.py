@@ -1,7 +1,5 @@
 # utils/epic_helpers.py
-
 from mock_epic_data import mock_document_reference
-
 
 def get_documents_by_type(patient_id: str, doc_type_code: str):
     return [

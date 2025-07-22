@@ -33,21 +33,17 @@ async def login_to_epic():
         "state": state,
     })
     auth_url = f"{EPIC_AUTH_URL}?{query}"
-    print("🔍 Epic Auth URL:", auth_url)
     return RedirectResponse(auth_url)
 
 # Public
 @router.get("/epic/callback")
 async def epic_callback(request: Request):
-    print("Callback route hit with query params:", dict(request.query_params))
     code = request.query_params.get("code")
     if not code:
         raise HTTPException(status_code=400, detail="Missing code from Epic")
 
     try:
-        print("Calling token exchange with code:", code)
         token_response = EpicEHR.exchange_code_for_token(code)
-        print("Token response received:", token_response)
         access_token = token_response.get("access_token")
 
         if not access_token:
@@ -57,7 +53,6 @@ async def epic_callback(request: Request):
         return RedirectResponse(redirect_url)
 
     except Exception as e:
-        print("Exception during token exchange:", str(e))
         raise HTTPException(status_code=500, detail=f"Token exchange failed: {str(e)}")
 
 # ✅ Protected
