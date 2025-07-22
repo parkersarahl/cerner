@@ -20,11 +20,19 @@ const Login = () => {
       });
 
       const { access_token } = response.data;
-      localStorage.setItem('token', access_token);
-
-      // Decode token to extract role
       const decoded = jwtDecode(access_token);
-      localStorage.setItem('roles', decoded.role || 'user'); // fallback role
+      const roles = decoded.roles || []; // Fallback to empty array if no roles present
+      console.log("Decoded JWT:", decoded);
+      console.log(roles);
+
+      
+      if (!roles.includes('provider') && !roles.includes('admin')) {
+        setError('You are not authorized to view this data');
+        return;
+    }
+
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('roles', JSON.stringify(roles)); // Store roles in localStorage
 
       // Redirect to homepage or dashboard
       navigate('/frontpage');
