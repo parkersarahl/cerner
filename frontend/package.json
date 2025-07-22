@@ -21,6 +21,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
+    
   },
   "eslintConfig": {
     "extends": [
@@ -46,4 +47,6 @@
     "tailwindcss": "^3.4.17"
   },
   "proxy": "http://127.0.0.1:8000"
+
+  
 }

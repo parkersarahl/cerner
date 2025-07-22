@@ -11,8 +11,6 @@ const PatientSearch = () => {
 
   const token = localStorage.getItem('token');
 
-  //const navigate = useNavigate();
-
   const handleSearch = async () => {
     setError('');
     setLoading(true);
@@ -31,28 +29,27 @@ const PatientSearch = () => {
         : undefined;
 
       const response = await axios.get(url, { headers });
-      //const entries = response.data.entry || response.data.patients || [];
 
       let patients = [];
 
       if (source === 'epic') {
-      const entries = response.data.entry || [];
-      patients = entries.map((e) => {
-        const resource = e.resource || {};
-        const nameField = resource.name?.[0];
-        const fullName =
-          nameField?.text ||
-          `${(nameField?.given || []).join(' ')} ${nameField?.family || ''}`.trim();
-        return {
-          id: resource.id,
-          name: fullName || 'Unnamed',
-          birthDate: resource.birthDate || 'N/A',
-          gender: resource.gender || 'Unknown',
-        };
-      });
-    } else if (source === 'cerner') {
-      patients = response.data.patients || [];
-    }
+        const entries = response.data.entry || [];
+        patients = entries.map((e) => {
+          const resource = e.resource || {};
+          const nameField = resource.name?.[0];
+          const fullName =
+            nameField?.text ||
+            `${(nameField?.given || []).join(' ')} ${nameField?.family || ''}`.trim();
+          return {
+            id: resource.id,
+            name: fullName || 'Unnamed',
+            birthDate: resource.birthDate || 'N/A',
+            gender: resource.gender || 'Unknown',
+          };
+        });
+      } else if (source === 'cerner') {
+        patients = response.data.patients || [];
+      }
       setResults(patients);
     } catch (err) {
       console.error(err);
@@ -62,48 +59,55 @@ const PatientSearch = () => {
     }
   };
 
+  // handle form submission (for Enter key)
+  const onSubmit = (e) => {
+    e.preventDefault();   // prevent page refresh
+    if (name.trim() !== '') {
+      handleSearch();
+    }
+  };
+
   return (
     <>
       <div className="p-4">
         <h2 className="text-xl font-semibold mb-4">Search Patients</h2>
-        <div className="space-y-2">
+        <form onSubmit={onSubmit} className="space-y-2">
           <input
             type="text"
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="border p-2 w-full"
-        />
-        <button
-          onClick={handleSearch}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          disabled={loading || name.trim() === ''}
-        >
-          {loading ? 'Searching...' : 'Search'}
-        </button>
-      </div>
-
-      {error && <p className="text-red-600 mt-4">{error}</p>}
-
-      <ul className="mt-6 space-y-2">
-        {results.map((patient) => (
-          <li
-            key={patient.id}
-            className="border p-2 rounded shadow hover:bg-gray-100 cursor-pointer"
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="border p-2 w-full"
+          />
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            disabled={loading || name.trim() === ''}
           >
-            <a href={`/patients/${patient.id}`} className="text-blue-600 hover:underline">
-              {patient.name} (DOB: {patient.birthDate})
-            </a>
-            <div className="text-sm text-gray-700">
-              ID: {patient.id} | Gender: {patient.gender} | DOB: {patient.birthDate}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+            {loading ? 'Searching...' : 'Search'}
+          </button>
+        </form>
+
+        {error && <p className="text-red-600 mt-4">{error}</p>}
+
+        <ul className="mt-6 space-y-2">
+          {results.map((patient) => (
+            <li
+              key={patient.id}
+              className="border p-2 rounded shadow hover:bg-gray-100 cursor-pointer"
+            >
+              <a href={`/patients/${patient.id}`} className="text-blue-600 hover:underline">
+                {patient.name} (DOB: {patient.birthDate})
+              </a>
+              <div className="text-sm text-gray-700">
+                ID: {patient.id} | Gender: {patient.gender} | DOB: {patient.birthDate}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </>
   );
-}; 
+};
 
 export default PatientSearch;
-
