@@ -13,7 +13,6 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://fhir-jjwzn7jxw-sarah-parkers-projects.vercel.app",
         "https://fhir-five.vercel.app",
         "http://localhost:3000"
     ],  
