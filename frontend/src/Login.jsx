@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode'; // install via npm if needed
 import appLogo from './graphics/ConnectEHR_logo.png';
 
-const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 const Login = () => {
+  const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
