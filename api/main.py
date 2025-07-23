@@ -1,9 +1,8 @@
-from getpass import getuser
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from routers import auth, epic_routes, patient, cerner_routes
-from routers import epic_routes  # Ensure epic_routes is imported to register its
+
 from starlette.middleware.sessions import SessionMiddleware
 import os
 
@@ -19,14 +18,11 @@ app.version = "1.0.0"
 # Enable CORS for your frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://fhir-9d447ubr1-sarah-parkers-projects.vercel.app/","http://localhost:3000"],  # Adjust if deployed
+    allow_origins=["https://fhir-9d447ubr1-sarah-parkers-projects.vercel.app","http://localhost:3000"],  # Adjust if deployed
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-#Register the router
-app.include_router(auth.router)
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
