@@ -11,6 +11,8 @@ const PatientDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
   useEffect(() => {
     const fetchResources = async () => {
       setIsLoading(true);
@@ -29,26 +31,26 @@ const PatientDetail = () => {
         const [radiologyRes, labRes, notesRes, patientRes] = await Promise.all([
           axios.get(
             isEpicMock
-              ? `/api/epic/documentReferences?patientId=${patientId}&type=radiology`
-              : `/api/cerner/diagnostic-reports/radiology?patient=${patientId}`, 
+              ? `${REACT_APP_API_URL}/api/epic/documentReferences?patientId=${patientId}&type=radiology`
+              : `${REACT_APP_API_URL}/api/cerner/diagnostic-reports/radiology?patient=${patientId}`,
               config
           ),
           axios.get(
             isEpicMock
-              ? `/api/epic/documentReferences?patientId=${patientId}&type=lab`
-              : `/api/cerner/diagnostic-reports/labs?patient=${patientId}`,
+              ? `${REACT_APP_API_URL}/api/epic/documentReferences?patientId=${patientId}&type=lab`
+              : `${REACT_APP_API_URL}/api/cerner/diagnostic-reports/labs?patient=${patientId}`,
               config
           ),
           axios.get(
             isEpicMock
-              ? `/api/epic/documentReferences?patientId=${patientId}&type=clinical`
-              : `/api/cerner/diagnostic-reports/clinical?patient=${patientId}`,
+              ? `${REACT_APP_API_URL}/api/epic/documentReferences?patientId=${patientId}&type=clinical`
+              : `${REACT_APP_API_URL}/api/cerner/diagnostic-reports/clinical?patient=${patientId}`,
               config
         ),  
           axios.get(
             isEpicMock
-              ? `/api/epic/patient/${patientId}`
-              : `/api/cerner/patient/${patientId}`,
+              ? `${REACT_APP_API_URL}/api/epic/patient/${patientId}`
+              : `${REACT_APP_API_URL}/api/cerner/patient/${patientId}`,
               config
           ),
         ]);

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 
+const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 const PatientSearch = () => {
   const { source } = useParams(); // source will be "epic" or "cerner"
   const [name, setName] = useState('');
@@ -17,9 +19,9 @@ const PatientSearch = () => {
     try {
       let url;
       if (source === 'epic') {
-        url = `/api/epic/patient?name=${encodeURIComponent(name)}`;
+        url = `${REACT_APP_API_URL}/api/epic/patient?name=${encodeURIComponent(name)}`;
       } else if (source === 'cerner') {
-        url = `/api/cerner/patient?name=${encodeURIComponent(name)}`;
+        url = `${REACT_APP_API_URL}/api/cerner/patient?name=${encodeURIComponent(name)}`;
       } else {
         throw new Error('Unsupported EHR source');
       } 
