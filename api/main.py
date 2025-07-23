@@ -7,12 +7,6 @@ from starlette.middleware.sessions import SessionMiddleware
 import os
 
 app = FastAPI()
-app.include_router(auth.router, prefix="/api")
-app.include_router(epic_routes.router, prefix="/api")
-app.include_router(patient.router, prefix="/api")
-app.include_router(cerner_routes.router, prefix="/api")
-app.title = "ConnectEHR API"
-app.version = "1.0.0"
 
 
 # Enable CORS for your frontend
@@ -23,6 +17,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(auth.router, prefix="/api")
+app.include_router(epic_routes.router, prefix="/api")
+app.include_router(patient.router, prefix="/api")
+app.include_router(cerner_routes.router, prefix="/api")
+app.title = "ConnectEHR API"
+app.version = "1.0.0"
+
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
