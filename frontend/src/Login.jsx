@@ -4,17 +4,19 @@ import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode'; // install via npm if needed
 import appLogo from './graphics/ConnectEHR_logo.png';
 
+const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      const response = await axios.post('/api/auth/login', {
+      const response = await axios.post(`${REACT_APP_API_URL}/api/auth/login`, {
         username: email,
         password,
       });
