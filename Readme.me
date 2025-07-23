@@ -1,0 +1,95 @@
+📦 ConnectEHR — FHIR Integration Platform
+ConnectEHR is a full-stack application built to integrate with EHR systems via the HL7® FHIR® standard, using SMART on FHIR authentication. 
+The current implementation supports Epic’s sandbox environment and includes provider login, patient search, and document viewing.
+
+🚀 Features
+🔐 SMART on FHIR OAuth2 with Epic sandbox
+🧑‍⚕️ Provider login and secure session management
+🔍 Patient search with mock and live data support
+📄 Viewing FHIR DocumentReference, DiagnosticReport, Observation resources
+🖥️ React frontend + FastAPI backend
+✅ HIPAA-ready authentication structure (in progress)
+
+
+🛠️ Tech Stack
+| Frontend    | Backend  | Integration   | Auth               |
+| ----------- | -------- | ------------- | ------------------ |
+| React       | FastAPI  | Epic FHIR API | OAuth2 (JWT, PKCE) |
+| TailwindCSS | Pydantic | SMART on FHIR | JWT Session Tokens |
+
+
+📁 Project Structure
+connectehr/
+│
+├── api/                  # FastAPI backend
+│   ├── main.py           # Entry point
+│   ├── auth.py           # OAuth2 logic for Epic
+│   ├── config.py         # Logic to use .env
+│   ├── routers/          # API route handlers
+│   ├── utils/            # FHIR utilities and mock data
+│   └── services/         # Pydantic models
+│
+├── frontend/             # React frontend
+│   ├── App.js
+│   ├── components/
+│   ├── src/
+│
+├── venv/                 # Virtual environment (excluded from Git)
+├── .env                  # Environment variables
+└── README.md             # You're here!
+
+⚙️ Setup Instructions
+1. Backend (FastAPI)
+    cd api
+    python -m venv venv
+    source venv/Scripts/activate  # Windows
+    pip install -r requirements.txt
+    uvicorn main:app --reload
+
+2. Frontend (React)
+    cd frontend
+    npm install
+    npm start
+
+👤🔑 Role Based access
+    - Provider, allows user to search and view patient data
+        Username: provider@example.com
+        Password: securepassword
+    - Guest, will be blocked from accessing patient data
+        Username: username@example.com
+        Password: securepassword2
+
+🏥🔄 Cerner Workflow
+    - Patient search and document viewing is accessed through
+      the Cerner sandbox
+    
+    - Planned support for Cerner's SMART on FHIR login:
+        1. Redirect to Cerner authorization server
+        2. User logs in and authorizes access
+        3. Code exchanged for access token
+        4. Use token to fetch FHIR data
+
+🔄 OAuth2 Workflow (Epic Sandbox)
+    1. User clicks "Log in with Epic"
+    2. Redirects to Epic authorization page
+    3. Use sandbox credentials
+        Username: FHIR
+        Password: EpicFhir11!
+    4. Upon successful login, authorization code is exchanged for access token
+    5. FastAPI stores token and session data securely
+    6. Frontend uses backend APIs to fetch FHIR data for logged-in provider
+
+## 🔒 HIPAA Compliance Checklist (in progress)
+
+- [x] 🔐 Secure OAuth2 authorization
+- [x] 🔒 HTTPS session handling
+- [ ] 🧾 Encrypted audit logs
+- [X] 🛡️ Role-based access control (provider-only)
+- [ ] 🫥 PHI redaction for logs & UI
+
+✍️ Acknowledgments
+Epic on FHIR sandbox
+
+HL7 FHIR specification
+
+SMART on FHIR protocols
