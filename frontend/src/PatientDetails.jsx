@@ -11,9 +11,10 @@ const PatientDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+  
 
   useEffect(() => {
+    const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
     const fetchResources = async () => {
       setIsLoading(true);
       try {
