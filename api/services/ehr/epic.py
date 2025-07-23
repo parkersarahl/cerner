@@ -1,7 +1,6 @@
 # services/ehr/epic.py
 from services.ehr.base import EHRVendor
-from datetime import datetime, timezone, timedelta
-import jwt, os, uuid, requests, json, httpx
+import requests
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.x509 import load_pem_x509_certificate
