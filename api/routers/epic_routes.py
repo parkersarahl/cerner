@@ -49,7 +49,7 @@ async def epic_callback(request: Request):
         if not access_token:
             raise HTTPException(status_code=500, detail="No access_token returned")
 
-        redirect_url = f"http://localhost:3000/search/epic?token={access_token}"
+        redirect_url = f"https://fhir-five.vercel.app/search/epic?token={access_token}"
         return RedirectResponse(redirect_url)
 
     except Exception as e:
