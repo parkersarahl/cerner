@@ -1,4 +1,5 @@
 # services/ehr/epic.py
+from urllib import response
 from services.ehr.base import EHRVendor
 import requests
 from cryptography.hazmat.backends import default_backend
@@ -34,8 +35,12 @@ class EpicEHR(EHRVendor):
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
-
+        print("🔥 exchange_code_for_token() was called!")
+        print("Sending token exchange request with:", data)
         response = requests.post(EPIC_TOKEN_URL, data=data, headers=headers)
+        print("Response status:", response.status_code)
+        print("Response text:", response.text)
+
 
         if response.status_code != 200:
             raise Exception(f"Token exchange failed: {response.status_code}, {response.text}")
