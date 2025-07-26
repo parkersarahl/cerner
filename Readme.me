@@ -1,7 +1,22 @@
 📦 ConnectEHR — FHIR Integration Platform
 ConnectEHR is a full-stack application built to integrate with EHR systems via the HL7® FHIR® standard, using SMART on FHIR authentication. 
-The current implementation supports Epic’s sandbox environment and includes provider login, patient search, and document viewing.
+The current implementation supports Epic’s sandbox environment and includes provider login, patient search, and document viewing. Currently app is
+setup for sandbox and mock patient data. No actual patient data is viewed or used. 
 
+🌐 View App on the Web
+    https://fhir-five.vercel.app/
+    
+    🔑Login Credentials:
+        - Provider
+            Username: provider@example.com
+            Password: securepassword
+        - Guest,
+            Username: username@example.com
+            Password: securepassword2
+    🔑Epic Sandbox Login Credentials:
+        Username: FHIR
+        Password: EpicFhir11!
+    
 🚀 Features
 🔐 SMART on FHIR OAuth2 with Epic sandbox
 🧑‍⚕️ Provider login and secure session management
@@ -38,26 +53,10 @@ connectehr/
 ├── .env                  # Environment variables
 └── README.md             # You're here!
 
-⚙️ Setup Instructions
-1. Backend (FastAPI)
-    cd api
-    python -m venv venv
-    source venv/Scripts/activate  # Windows
-    pip install -r requirements.txt
-    uvicorn main:app --reload
-
-2. Frontend (React)
-    cd frontend
-    npm install
-    npm start
 
 👤🔑 Role Based access
     - Provider, allows user to search and view patient data
-        Username: provider@example.com
-        Password: securepassword
     - Guest, will be blocked from accessing patient data
-        Username: username@example.com
-        Password: securepassword2
 
 🏥🔄 Cerner Workflow
     - Patient search and document viewing is accessed through
