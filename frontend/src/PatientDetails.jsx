@@ -114,7 +114,7 @@ const PatientDetail = () => {
   if (!ALLOWED_ACCEPTS.includes(contentType)) {
     contentType = "application/pdf";
   }
-
+  const REACT_APP_API_URL = process.env.REACT_APP_API_URL;
   const isEpicMock = patientId.startsWith("mock-");
   const isAbsoluteUrl = url.startsWith("http://") || url.startsWith("https://");
 
