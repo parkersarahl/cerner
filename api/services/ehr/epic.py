@@ -35,11 +35,11 @@ class EpicEHR(EHRVendor):
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
-        print("🔥 exchange_code_for_token() was called!")
-        print("Sending token exchange request with:", data)
+        #print("🔥 exchange_code_for_token() was called!")
+        #print("Sending token exchange request with:", data)
         response = requests.post(EPIC_TOKEN_URL, data=data, headers=headers)
-        print("Response status:", response.status_code)
-        print("Response text:", response.text)
+        #print("Response status:", response.status_code)
+        #print("Response text:", response.text)
 
 
         if response.status_code != 200:
