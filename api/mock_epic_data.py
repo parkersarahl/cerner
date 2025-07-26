@@ -107,7 +107,7 @@ mock_document_reference = {
         "content": [{
           "attachment": {
             "contentType": "application/pdf",
-            "url": "http://localhost:8000/api/epic/binary/note-mock-01"
+            "url": "https://fhir-u5oe.onrender.com/api/epic/binary/note-mock-01"
           }
         }]
       }
@@ -126,7 +126,7 @@ mock_document_reference = {
         "content": [{
           "attachment": {
             "contentType": "application/pdf",
-            "url": "http://localhost:8000/api/epic/binary/lab-mock-01"
+            "url": "https://fhir-u5oe.onrender.com/api/epic/binary/lab-mock-01"
           }
         }]
       }
@@ -145,7 +145,7 @@ mock_document_reference = {
         "content": [{
           "attachment": {
             "contentType": "application/pdf",
-            "url": "http://localhost:8000/api/epic/binary/rad-mock-01"
+            "url": "https://fhir-u5oe.onrender.com/api/epic/binary/rad-mock-01"
           }
         }]
       }
