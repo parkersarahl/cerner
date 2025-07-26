@@ -114,15 +114,15 @@ const PatientDetail = () => {
   if (!ALLOWED_ACCEPTS.includes(contentType)) {
     contentType = "application/pdf";
   }
-
+  const REACT_APP_API_URL = process.env.REACT_APP_API_URL;
   const isEpicMock = patientId.startsWith("mock-");
   const isAbsoluteUrl = url.startsWith("http://") || url.startsWith("https://");
 
    const finalUrl = isAbsoluteUrl
     ? url
     : isEpicMock
-    ? `/api/epic/binary/${url}`
-    : `/api/cerner/binary/${url}`;
+    ? `${REACT_APP_API_URL}/api/epic/binary/${url}`
+    : `${REACT_APP_API_URL}/api/cerner/binary/${url}`;
 
   // If absolute URL, extract binary_id from it if it points to your backend
   if (isAbsoluteUrl && isEpicMock) {
