@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const PatientSearch = () => {
   const { source } = useParams(); // source will be "epic" or "cerner"
@@ -8,6 +8,7 @@ const PatientSearch = () => {
   const [results, setResults] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
 
@@ -95,10 +96,14 @@ const PatientSearch = () => {
             <li
               key={patient.id}
               className="border p-2 rounded shadow hover:bg-gray-100 cursor-pointer"
+              onClick={() => {
+                localStorage.setItem('searchSource', source); // 🔹 Save the source
+                navigate(`/patients/${patient.id}`); // 🔹 Go to detail page
+            }}
             >
-              <a href={`/patients/${patient.id}`} className="text-blue-600 hover:underline">
+               <span className="text-blue-600 hover:underline">
                 {patient.name} (DOB: {patient.birthDate})
-              </a>
+              </span>
               <div className="text-sm text-gray-700">
                 ID: {patient.id} | Gender: {patient.gender} | DOB: {patient.birthDate}
               </div>
