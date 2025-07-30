@@ -16,11 +16,13 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     try {
       const response = await axios.post(`${REACT_APP_API_URL}/api/auth/login`, {
         username: email,
@@ -71,6 +73,7 @@ const Login = () => {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
           />
           <input
             className="w-full mb-4 p-2 border rounded"
@@ -78,10 +81,21 @@ const Login = () => {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
           />
-          <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded">
-            Login
+          <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded" disabled={loading}>
+            {loading ? (
+              <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10"
+                  stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 108 8h-4l3 3 3-3h-4a8 8 0 01-8 8z" />
+              </svg>
+            ) : (
+              'Login'
+            )}
           </button>
+
         </form>
       </div>
     </div>
