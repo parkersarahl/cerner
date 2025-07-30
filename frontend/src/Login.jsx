@@ -38,6 +38,7 @@ const Login = () => {
       
       if (!roles.includes('provider') && !roles.includes('admin')) {
         setError('You are not authorized to view this data');
+        setLoading(false);
         return;
     }
 
@@ -49,6 +50,7 @@ const Login = () => {
     } catch (err) {
       console.error("Login error:", err);
       setError('Invalid email or password');
+      setLoading(false);
     }
   };
 
