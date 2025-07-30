@@ -11,6 +11,6 @@ EPIC_TOKEN_URL = os.getenv("EPIC_TOKEN_URL")
 EPIC_FHIR_BASE_URL = os.getenv("EPIC_FHIR_BASE_URL")
 EPIC_SCOPES= "openid fhirUser profile user/*.read offline_access"
 EPIC_CLIENT_SECRET = os.getenv("EPIC_SECRET")
+SECRET_KEY = os.getenv("SECRET_KEY")  # Used for JWT signing
 
 EPIC_ISSUER = EPIC_CLIENT_ID  # usually the client ID
-

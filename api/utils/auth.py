@@ -3,35 +3,57 @@ from fastapi import Header, HTTPException, Depends, status
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import jwt, JWTError, ExpiredSignatureError
+from config import SECRET_KEY
 
-SECRET_KEY = "supersecretkey"  # In production, use environment variables
+SECRET_KEY = SECRET_KEY  # In production, use environment variables
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+from fastapi import Header, HTTPException, status
+from jose import jwt, JWTError, ExpiredSignatureError
+
 def get_current_user(authorization: str = Header(...)):
     if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing Bearer token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization header must start with Bearer",
+        )
 
     token = authorization.removeprefix("Bearer ").strip()
+
+    if len(token) > 2048:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token too long",
+        )
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if "sub" not in payload:
-            raise HTTPException(status_code=401, detail="Missing subject in token")
-
-        # Optionally default roles to empty list if not present
-        roles = payload.get("roles", [])
-        return {
-            "sub": payload["sub"],
-            "roles": roles,
-            **payload,  # optionally return all claims
-        }
-
     except ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+        )
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
+
+    username = payload.get("sub")
+    if username is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing subject",
+        )
+
+    return {
+        "sub": username,
+        "roles": payload.get("roles", []),
+        **payload,
+    }
 
 def require_role(allowed_roles: List[str]):
     def role_checker(user: dict = Depends(get_current_user)):
