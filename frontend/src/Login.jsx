@@ -83,19 +83,20 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
           />
-          <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded" disabled={loading}>
+          <button
+            type="submit"
+            className={`w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-2 rounded flex items-center justify-center gap-3 transition-transform duration-150 hover:scale-[1.02] disabled:opacity-75 disabled:cursor-not-allowed shadow-md`}
+            disabled={loading}
+          >
             {loading ? (
-              <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10"
-                  stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 108 8h-4l3 3 3-3h-4a8 8 0 01-8 8z" />
-              </svg>
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span className="animate-pulse font-medium tracking-wide">Logging in...</span>
+              </>
             ) : (
               'Login'
             )}
           </button>
-
         </form>
       </div>
     </div>
