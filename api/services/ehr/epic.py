@@ -15,6 +15,8 @@ from config import (
     EPIC_CLIENT_SECRET,
 )
 
+from utils.audit_logger import log_audit_event
+
 EPIC_FHIR_URL = "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4"
 CLIENT_ID = EPIC_CLIENT_ID 
 EPIC_TOKEN_URL = EPIC_TOKEN_URL
@@ -46,3 +48,22 @@ class EpicEHR(EHRVendor):
             raise Exception(f"Token exchange failed: {response.status_code}, {response.text}")
 
         return response.json()  # access_token, id_token, etc.
+
+    def fetch_patient(self, patient_id: str, db, user_id: str, ip_address: str = None):
+        """Mock version for now — replace with real FHIR call if needed."""
+        
+        # Log the access
+        log_audit_event(
+            db=db,
+            user_id=user_id,
+            patient_id=patient_id,
+            action="fetch_patient",
+            ip_address=ip_address
+        )
+
+        # MOCK: replace with a real FHIR fetch later
+        return {
+            "id": patient_id,
+            "name": "Epic Sandbox Patient",
+            "resourceType": "Patient"
+        }

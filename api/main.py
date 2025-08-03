@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from routers import auth, epic_routes, patient, cerner_routes
+from database import engine, Base
+
 
 from starlette.middleware.sessions import SessionMiddleware
 import os
@@ -33,3 +35,11 @@ app.version = "1.0.0"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SESSION_SECRET", "dev-secret"))
+
+
+#def init_db():
+    #Base.metadata.create_all(bind=engine)
+
+#@app.on_event("startup")
+#def on_startup():
+#    init_db()
