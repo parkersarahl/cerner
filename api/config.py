@@ -14,3 +14,4 @@ EPIC_CLIENT_SECRET = os.getenv("EPIC_SECRET")
 SECRET_KEY = os.getenv("SECRET_KEY")  # Used for JWT signing
 
 EPIC_ISSUER = EPIC_CLIENT_ID  # usually the client ID
+DATABASE_URL = os.getenv("DATABASE_URL")

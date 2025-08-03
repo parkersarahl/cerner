@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse
 from utils.auth import get_current_user, require_role  # ✅ Import the auth dependency
+from utils.audit_logger import log_audit_event
+from database import get_db
+from sqlalchemy.orm import Session
 import httpx
 import io
 
@@ -18,9 +21,11 @@ VALID_ACCEPTS = {
 
 # ---------- Patient Search ----------
 @router.get("/cerner/patient")
+
 async def search_patients(
     name: str = Query(..., description="Name of the patient to search"),
-    user: dict = Depends(require_role(["provider", "admin"]))  # ✅ Protected
+    user: dict = Depends(require_role(["provider", "admin"])),
+    db: Session = Depends(get_db)
 ):
     url = f"{FHIR_BASE_URL}/Patient?name={name}"
     async with httpx.AsyncClient() as client:
@@ -47,7 +52,13 @@ async def search_patients(
             "gender": resource.get("gender"),
             "birthDate": resource.get("birthDate")
         })
-
+    log_audit_event(
+        db=db,
+        user_id=user["sub"],  # or user.id depending on your user model
+        action="searched patients",
+        resource_type="Patient",
+        resource_id=None  # No specific patient ID since this is a search  
+    )
     return {"patients": patients}
 
 
@@ -55,7 +66,8 @@ async def search_patients(
 @router.get("/cerner/patient/{patient_id}")
 async def get_patient_by_id(
     patient_id: str,
-    user: dict = Depends(require_role(["provider", "admin"]))  # ✅ Protected
+    user: dict = Depends(require_role(["provider", "admin"])),
+    db: Session = Depends(get_db)
 ):
     url = f"{FHIR_BASE_URL}/Patient/{patient_id}"
     async with httpx.AsyncClient() as client:
@@ -63,7 +75,13 @@ async def get_patient_by_id(
 
     if response.status_code != 200:
         raise HTTPException(response.status_code, f"Error from FHIR API: {response.text}")
-
+    log_audit_event(
+        db=db,
+        user_id=user["sub"],  # or user.id depending on your user model
+        action="searched_patient",
+        resource_type="Patient",
+        resource_id=patient_id
+    )
     return response.json()
 
 

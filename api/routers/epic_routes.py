@@ -5,6 +5,9 @@ import urllib.parse
 import secrets
 
 from utils.auth import get_current_user, require_role  # ⬅️ Import protection
+from utils.audit_logger import log_audit_event
+from database import get_db
+from sqlalchemy.orm import Session  
 from services.ehr.epic import EpicEHR
 from mock_epic_data import mock_patients, mock_document_reference, mock_binary_files
 from config import (
@@ -59,7 +62,8 @@ async def epic_callback(request: Request):
 @router.get("/epic/patient")
 async def search_patient_epic(
     name: str = Query(...),
-    user: dict = Depends(require_role(["provider", "admin"]))
+    user: dict = Depends(require_role(["provider", "admin"])),
+    db: Session = Depends(get_db)
 ):
     filtered = [
         patient for patient in mock_patients["patients"]
@@ -68,7 +72,13 @@ async def search_patient_epic(
             [patient["name"][0].get("family", "")]
         ).lower()
     ]
-
+    log_audit_event(
+        db=db,
+        user_id=user["sub"],  # or user.id depending on your user model
+        action="searched patients",
+        resource_type="Patient",
+        resource_id=None  # No specific patient ID since this is a search  
+    )
     return {
         "resourceType": "Bundle",
         "type": "searchset",
@@ -83,8 +93,16 @@ async def search_patient_epic(
 @router.get("/epic/patient/{patient_id}")
 async def get_mock_patient_by_id(
     patient_id: str,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
+    log_audit_event(
+        db=db,
+        user_id=user["sub"],  # or user.id depending on your user model
+        action="searched_patient",
+        resource_type="Patient",
+        resource_id=patient_id
+    )
     for patient in mock_patients["patients"]:
         if patient["id"] == patient_id:
             return patient
