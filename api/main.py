@@ -37,9 +37,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SESSION_SECRET", "dev-secret"))
 
 
-#def init_db():
-    #Base.metadata.create_all(bind=engine)
+def init_db():
+    Base.metadata.create_all(bind=engine)
 
-#@app.on_event("startup")
-#def on_startup():
-#    init_db()
+@app.on_event("startup")
+def on_startup():
+    init_db()
