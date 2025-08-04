@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse
-from utils.auth import get_current_user, require_role  # ✅ Import the auth dependency
+from utils.permissions import get_current_user, require_role  # ✅ Import the auth dependency
 from utils.audit_logger import log_audit_event
 from database import get_db
 from sqlalchemy.orm import Session
