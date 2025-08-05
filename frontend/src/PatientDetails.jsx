@@ -153,6 +153,7 @@ const PatientDetail = () => {
   }
 };
   const logDiagnosticReportView = async (patientId, reportId) => {
+    console.log("Logging diagnostic report view for:", patientId, reportId);
     try {
       await axios.post(`${REACT_APP_API_URL}/api/cerner/audit/log-diagnostic-view`, null, {
         params: {
@@ -168,6 +169,7 @@ const PatientDetail = () => {
       console.error("Audit log failed:", err);
     }
   };
+
   const renderItem = (item, type) => {
     const id = item.id;
     if (!id) return null;
@@ -186,7 +188,10 @@ const PatientDetail = () => {
     return (
       <li key={`${type}-${id}`} className="my-1">
         <button
-          onClick={() => { handleResourceClick(item); logDiagnosticReportView(patientId, id); }}
+          onClick={() => {
+            console.log("Clicked item:", item); 
+            handleResourceClick(item); 
+            logDiagnosticReportView(patientId, id); }}
           className="text-blue-600 hover:underline focus:outline-none"
         >
           {label} ({formattedDate})
