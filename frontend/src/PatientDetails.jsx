@@ -152,13 +152,13 @@ const PatientDetail = () => {
     console.error(err);
   }
 };
-  const logDiagnosticReportView = async (patientId, reportId) => {
-    console.log("Logging diagnostic report view for:", patientId, reportId);
+  const logDiagnosticReportView = async (patientId, resourceID) => {
+    console.log("Logging diagnostic report view for:", patientId, resourceID);
     try {
       await axios.post(`${REACT_APP_API_URL}/api/cerner/audit/log-diagnostic-view`, null, {
         params: {
           patient_id: patientId,
-          report_id: reportId
+          resource_id: resourceID
         },
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
