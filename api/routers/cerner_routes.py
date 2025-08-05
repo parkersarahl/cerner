@@ -82,7 +82,7 @@ async def get_patient_by_id(
         resource_type="Patient",
         resource_id=patient_id
     )
-    return response.json()
+    return response.json() # Return the full patient resource
 
 
 # ---------- Diagnostic Report Fetchers ----------
