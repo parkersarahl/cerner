@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from fastapi.responses import StreamingResponse
 from utils.auth import get_current_user, require_role  # ✅ Import the auth dependency
 from utils.audit_logger import log_audit_event
@@ -78,7 +78,7 @@ async def get_patient_by_id(
     log_audit_event(
         db=db,
         user_id=user["sub"],  # or user.id depending on your user model
-        action="searched_patient",
+        action="viewed patient",
         resource_type="Patient",
         resource_id=patient_id
     )
@@ -102,7 +102,7 @@ async def fetch_reports_by_category(patient: str, category_code: str):
 @router.get("/cerner/diagnostic-reports/radiology")
 async def get_radiology_reports(
     patient: str,
-    user: dict = Depends(require_role(["provider", "admin"]))  # ✅ Protected
+    user: dict = Depends(require_role(["provider", "admin"])),
 ):
     bundle = await fetch_reports_by_category(patient, "http://terminology.hl7.org/CodeSystem/v2-0074|RAD")
     filtered = []
@@ -114,7 +114,6 @@ async def get_radiology_reports(
                 if coding.get("code") == "LP29684-5":
                     filtered.append(entry)
                     break
-
     return {"entry": filtered}
 
 
@@ -148,6 +147,23 @@ async def get_clinical_notes(
 
     return {"entry": filtered}
 
+@router.post("/cerner/audit/log-diagnostic-view")
+def log_diagnostic_report_view(
+    request: Request,
+    patient_id: str,
+    report_id: str,
+    db=Depends(get_db),
+    user=Depends(get_current_user),
+):
+    log_audit_event(
+        db=db,
+        user_id=user["sub"],
+        action="viewed diagnostic report",
+        resource_type="DiagnosticReport",
+        resource_id=report_id,
+        patient_id=patient_id  # optional if your model supports it
+    )
+    return {"message": "Audit event logged"}
 
 # ---------- Binary Proxy ----------
 @router.get("/cerner/binary/{binary_id}")
