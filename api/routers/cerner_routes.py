@@ -23,9 +23,11 @@ VALID_ACCEPTS = {
 @router.get("/cerner/patient")
 
 async def search_patients(
+    request: Request,
     name: str = Query(..., description="Name of the patient to search"),
     user: dict = Depends(require_role(["provider", "admin"])),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    
 ):
     url = f"{FHIR_BASE_URL}/Patient?name={name}"
     async with httpx.AsyncClient() as client:
@@ -54,10 +56,12 @@ async def search_patients(
         })
     log_audit_event(
         db=db,
-        user_id=user["sub"],  # or user.id depending on your user model
-        action="searched patients",
+        user_id=user["sub"],
+        action="viewed patient",
         resource_type="Patient",
-        resource_id=None  # No specific patient ID since this is a search  
+        resource_id=None,
+        patient_id=None,
+        ip_address=request.client.host
     )
     return {"patients": patients}
 
@@ -65,6 +69,7 @@ async def search_patients(
 # ---------- Get Patient by ID ----------
 @router.get("/cerner/patient/{patient_id}")
 async def get_patient_by_id(
+    request: Request,
     patient_id: str,
     user: dict = Depends(require_role(["provider", "admin"])),
     db: Session = Depends(get_db)
@@ -75,15 +80,18 @@ async def get_patient_by_id(
 
     if response.status_code != 200:
         raise HTTPException(response.status_code, f"Error from FHIR API: {response.text}")
+
     log_audit_event(
         db=db,
-        user_id=user["sub"],  # or user.id depending on your user model
+        user_id=user["sub"],
         action="viewed patient",
         resource_type="Patient",
-        resource_id=patient_id
+        resource_id=patient_id,
+        patient_id=patient_id,
+        ip_address=request.client.host
     )
-    return response.json() # Return the full patient resource
 
+    return response.json()
 
 # ---------- Diagnostic Report Fetchers ----------
 async def fetch_reports_by_category(patient: str, category_code: str):
@@ -147,24 +155,32 @@ async def get_clinical_notes(
 
     return {"entry": filtered}
 
+
 @router.post("/cerner/audit/log-diagnostic-view")
 def log_diagnostic_report_view(
     request: Request,
-    patient_id: str,
-    report_id: str,
-    db=Depends(get_db),
-    user=Depends(get_current_user),
+    patient_id: str = Query(...),
+    resource_id: str = Query(...),
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ):
-    log_audit_event(
-        db=db,
-        user_id=user["sub"],
-        action="viewed diagnostic report",
-        resource_type="DiagnosticReport",
-        resource_id=report_id,
-        patient_id=patient_id  # optional if your model supports it
-    )
-    return {"message": "Audit event logged"}
+    try:
+        ip_address = request.client.host
 
+        log_audit_event(
+            db=db,
+            user_id=user["sub"],
+            action="viewed diagnostic report",
+            resource_type="DiagnosticReport",
+            resource_id=resource_id,
+            patient_id=patient_id,
+            ip_address=ip_address,
+        )
+    except Exception as e:
+        print(f"Audit log failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to log audit event")
+
+    return {"message": "Audit event logged"}
 # ---------- Binary Proxy ----------
 @router.get("/cerner/binary/{binary_id}")
 async def proxy_binary(
