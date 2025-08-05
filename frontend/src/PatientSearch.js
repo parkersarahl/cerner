@@ -13,6 +13,7 @@ const PatientSearch = () => {
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
+  console.log('Token:', token); // 🔹 Debugging token
 
   const handleSearch = async () => {
     setError('');
@@ -32,6 +33,7 @@ const PatientSearch = () => {
         : undefined;
 
       const response = await axios.get(url, { headers });
+      console.log("request headers:", headers); // 🔹 Debugging request headers
 
       let patients = [];
 
