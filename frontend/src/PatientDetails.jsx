@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
+const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 const PatientDetail = () => {
   const { patientId } = useParams();
   const [radiologyReports, setRadiologyReports] = useState([]);
@@ -14,7 +16,6 @@ const PatientDetail = () => {
   
 
   useEffect(() => {
-    const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
     const fetchResources = async () => {
       setIsLoading(true);
       try {
@@ -151,6 +152,23 @@ const PatientDetail = () => {
     console.error(err);
   }
 };
+  const logDiagnosticReportView = async (patientId, resourceID) => {
+    console.log("Logging diagnostic report view for:", patientId, resourceID);
+    try {
+      await axios.post(`${REACT_APP_API_URL}/api/cerner/audit/log-diagnostic-view`, null, {
+        params: {
+          patient_id: patientId,
+          resource_id: resourceID
+        },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        }
+      });
+      console.log("Audit log sent");
+    } catch (err) {
+      console.error("Audit log failed:", err);
+    }
+  };
 
   const renderItem = (item, type) => {
     const id = item.id;
@@ -166,11 +184,14 @@ const PatientDetail = () => {
     const formattedDate = date
       ? new Date(date).toLocaleDateString('en-US')
       : '';
-
+    
     return (
       <li key={`${type}-${id}`} className="my-1">
         <button
-          onClick={() => handleResourceClick(item)}
+          onClick={() => {
+            console.log("Clicked item:", item); 
+            handleResourceClick(item); 
+            logDiagnosticReportView(patientId, id); }}
           className="text-blue-600 hover:underline focus:outline-none"
         >
           {label} ({formattedDate})
