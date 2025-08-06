@@ -57,7 +57,7 @@ async def search_patients(
     log_audit_event(
         db=db,
         user_id=user["sub"],
-        action="viewed patient",
+        action="searched patient",
         resource_type="Patient",
         resource_id=None,
         patient_id=None,

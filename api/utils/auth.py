@@ -11,9 +11,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-from fastapi import Header, HTTPException, status
-from jose import jwt, JWTError, ExpiredSignatureError
-
 def get_current_user(authorization: str = Header(...)):
     if not authorization.startswith("Bearer "):
         raise HTTPException(
