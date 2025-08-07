@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from fastapi.responses import StreamingResponse
-from utils.permissions import get_current_user, require_role  # ✅ Import the auth dependency
+from utils.auth import get_current_user, require_role  # ✅ Import the auth dependency
 from utils.audit_logger import log_audit_event
 from database import get_db
 from sqlalchemy.orm import Session
@@ -177,7 +177,6 @@ def log_diagnostic_report_view(
             action=action,
             resource_type=resource_type,
             resource_id=resource_id,
-            action=action,
             patient_id=patient_id,
             ip_address=ip_address,
         )
