@@ -1,8 +1,7 @@
-from typing import List
-from fastapi import Header, HTTPException, Depends, status
+# api/utils/auth.py
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
-from jose import jwt, JWTError, ExpiredSignatureError
+from jose import jwt
 from config import SECRET_KEY
 
 SECRET_KEY = SECRET_KEY  # In production, use environment variables

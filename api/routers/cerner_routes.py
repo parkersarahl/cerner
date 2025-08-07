@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from fastapi.responses import StreamingResponse
-from utils.auth import get_current_user, require_role  # ✅ Import the auth dependency
+from utils.permissions import get_current_user, require_role  # ✅ Import the auth dependency
 from utils.audit_logger import log_audit_event
 from database import get_db
 from sqlalchemy.orm import Session
@@ -122,13 +122,15 @@ async def get_radiology_reports(
                 if coding.get("code") == "LP29684-5":
                     filtered.append(entry)
                     break
+
     return {"entry": filtered}
 
 
 @router.get("/cerner/diagnostic-reports/labs")
 async def get_lab_reports(
     patient: str,
-    user: dict = Depends(require_role(["provider", "admin"]))  # ✅ Protected
+    user: dict = Depends(require_role(["provider", "admin"])),
+    db: Session = Depends(get_db)  # ✅ Protected
 ):
     return await fetch_reports_by_category(patient, "http://terminology.hl7.org/CodeSystem/v2-0074|LAB")
 
@@ -136,7 +138,8 @@ async def get_lab_reports(
 @router.get("/cerner/diagnostic-reports/clinical")
 async def get_clinical_notes(
     patient: str,
-    user: dict = Depends(require_role(["provider", "admin"]))  # ✅ Protected
+    user: dict = Depends(require_role(["provider", "admin"])),
+    db: Session = Depends(get_db)  # ✅ Protected
 ):
     bundle = await fetch_reports_by_category(patient, "http://loinc.org|LP29708-2")
     filtered = []
@@ -152,15 +155,16 @@ async def get_clinical_notes(
                 if coding.get("code") == "LP29708-2":
                     filtered.append(entry)
                     break
-
     return {"entry": filtered}
 
 
-@router.post("/cerner/audit/log-diagnostic-view")
+@router.post("/cerner/audit/log-view")
 def log_diagnostic_report_view(
     request: Request,
     patient_id: str = Query(...),
     resource_id: str = Query(...),
+    resource_type: str = Query(...),
+    action: str = Query(...),
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
@@ -170,9 +174,10 @@ def log_diagnostic_report_view(
         log_audit_event(
             db=db,
             user_id=user["sub"],
-            action="viewed diagnostic report",
-            resource_type="DiagnosticReport",
+            action=action,
+            resource_type=resource_type,
             resource_id=resource_id,
+            action=action,
             patient_id=patient_id,
             ip_address=ip_address,
         )
