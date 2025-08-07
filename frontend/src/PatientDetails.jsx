@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
+const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 const PatientDetail = () => {
   const { patientId } = useParams();
   const [radiologyReports, setRadiologyReports] = useState([]);
@@ -14,7 +16,6 @@ const PatientDetail = () => {
   
 
   useEffect(() => {
-    const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
     const fetchResources = async () => {
       setIsLoading(true);
       try {
@@ -105,7 +106,7 @@ const PatientDetail = () => {
 
   let url = attachment.url;
   let contentType = attachment.contentType || "application/pdf";
-
+  
   if (!url) {
     setError("No report file URL available for this resource.");
     return;
@@ -142,6 +143,8 @@ const PatientDetail = () => {
         Authorization: `Bearer ${token}`,   // <-- Include auth token!
       },
     });
+    console.log("Final URL:", finalUrl);
+    console.log("Content-Type Sent in Accept:", contentType); 
 
     const blob = new Blob([response.data], { type: contentType });
     const blobUrl = URL.createObjectURL(blob);
@@ -151,33 +154,62 @@ const PatientDetail = () => {
     console.error(err);
   }
 };
+  const logResourceView = async (patientId, resourceId, resourceType, action) => {
+  try {
+    await axios.post(`${REACT_APP_API_URL}/api/cerner/audit/log-view`, null, {
+      params: {
+        patient_id: patientId,
+        resource_id: resourceId,
+        resource_type: resourceType,
+        action: action,
+      },
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    console.log("Audit log sent");
+  } catch (err) {
+    console.error("Audit log failed:", err);
+  }
+};
+
 
   const renderItem = (item, type) => {
-    const id = item.id;
-    if (!id) return null;
+  const id = item.id;
+  if (!id) return null;
 
-    const label =
-      item.type?.text ||
-      item.type?.coding?.[0]?.display ||
-      item.title ||
-      `${type} resource`;
+  const label =
+    item.type?.text ||
+    item.type?.coding?.[0]?.display ||
+    item.title ||
+    `${type} resource`;
 
-    const date = item.date || item.issued;
-    const formattedDate = date
-      ? new Date(date).toLocaleDateString('en-US')
-      : '';
+  const date = item.date || item.issued;
+  const formattedDate = date
+    ? new Date(date).toLocaleDateString('en-US')
+    : '';
 
-    return (
-      <li key={`${type}-${id}`} className="my-1">
-        <button
-          onClick={() => handleResourceClick(item)}
-          className="text-blue-600 hover:underline focus:outline-none"
-        >
-          {label} ({formattedDate})
-        </button>
-      </li>
-    );
-  };
+  return (
+    <li key={`${type}-${id}`} className="my-1">
+      <button
+        onClick={() => {
+          console.log("Clicked item:", item);
+          handleResourceClick(item);
+          logResourceView(
+            patientId,
+            id,
+            type === 'Radiology Report' || type === 'Lab Report' || type === 'Clinical Notes' ? 'DiagnosticReport' : type, // map to FHIR resource types if needed
+            "viewed resource"
+          );
+        }}
+        className="text-blue-600 hover:underline focus:outline-none"
+      >
+        {label} ({formattedDate})
+      </button>
+    </li>
+  );
+};
+
 
   if (isLoading) {
     return (
