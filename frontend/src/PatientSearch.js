@@ -13,6 +13,7 @@ const PatientSearch = () => {
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
+  console.log('Token:', token); // 🔹 Debugging token
 
   const handleSearch = async () => {
     setError('');
@@ -27,11 +28,23 @@ const PatientSearch = () => {
         throw new Error('Unsupported EHR source');
       } 
 
-      const headers = token
-        ? { Authorization: `Bearer ${token}` }
-        : undefined;
+    if (!token) {
+      console.error("No token found!");
+      setError("You must be logged in to search patients");
+      setLoading(false);
+    return;
+    }
 
-      const response = await axios.get(url, { headers });
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+
+console.log("Sending request to:", url);
+console.log("With headers:", config.headers);
+
+const response = await axios.get(url, config);
 
       let patients = [];
 
