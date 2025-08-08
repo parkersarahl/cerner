@@ -82,6 +82,10 @@ const PatientDetail = () => {
     'application/dicom',
     'application/fhir+xml',
     'application/fhir+json',
+    'application/json',
+    'text/plain',
+    'application/octet-stream',
+    'application/xml',
     '*/*',
   ];
 
