@@ -98,7 +98,7 @@ async def get_mock_patient_by_id(
     log_audit_event(
         db=db,
         user_id=user["sub"],  # or user.id depending on your user model
-        action="searched_patient",
+        action="viewed_patient",
         resource_type="Patient",
         resource_id=patient_id
     )
@@ -129,6 +129,34 @@ def get_mock_documents(
         "entry": [{"resource": doc} for doc in documents],
         "total": len(documents),
     }
+
+@router.post("/epic/audit/log-view")
+def log_diagnostic_report_view(
+    request: Request,
+    patient_id: str = Query(...),
+    resource_id: str = Query(...),
+    resource_type: str = Query(...),
+    action: str = Query(...),
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    try:
+        ip_address = request.client.host
+
+        log_audit_event(
+            db=db,
+            user_id=user["sub"],
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            patient_id=patient_id,
+            ip_address=ip_address,
+        )
+    except Exception as e:
+        print(f"Audit log failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to log audit event")
+
+    return {"message": "Audit event logged"}
 
 # ✅ Protected
 @router.get("/epic/binary/{binary_id}")
