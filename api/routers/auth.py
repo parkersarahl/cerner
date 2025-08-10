@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 from passlib.context import CryptContext
 
-from utils.auth import SECRET_KEY, ALGORITHM, verify_password, create_access_token  # Optional import reuse
+from utils.auth import SECRET_KEY, ALGORITHM
 
 router = APIRouter()
 

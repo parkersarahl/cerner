@@ -37,6 +37,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SESSION_SECRET", "dev-secret"))
 
 
+#---Used to create database tables initially---
 # def init_db():
 #     Base.metadata.create_all(bind=engine)
 
