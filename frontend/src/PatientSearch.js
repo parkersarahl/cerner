@@ -13,7 +13,6 @@ const PatientSearch = () => {
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
-  console.log('Token:', token); // 🔹 Debugging token
 
   const handleSearch = async () => {
     setError('');
@@ -40,9 +39,6 @@ const PatientSearch = () => {
         Authorization: `Bearer ${token}`,
       },
     };
-
-console.log("Sending request to:", url);
-console.log("With headers:", config.headers);
 
 const response = await axios.get(url, config);
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode'; // install via npm if needed
+import { jwtDecode } from 'jwt-decode';
 import appLogo from './graphics/ConnectEHR_logo.png';
 
 const isLocalhost = window.location.hostname === 'localhost';
@@ -32,8 +32,10 @@ const Login = () => {
       const { access_token } = response.data;
       const decoded = jwtDecode(access_token);
       const roles = decoded.roles || []; // Fallback to empty array if no roles present
-      console.log("Decoded JWT:", decoded);
-      console.log(roles);
+      
+      //----Debugging Logs----//
+      //console.log("Decoded JWT:", decoded);
+      //console.log(roles);
 
       
       if (!roles.includes('provider') && !roles.includes('admin')) {
