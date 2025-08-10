@@ -1,7 +1,6 @@
 # utils/audit_logger.py
 from models.audit_log import AuditLog
 from sqlalchemy.orm import Session
-from datetime import datetime
 
 def log_audit_event(
     db: Session,

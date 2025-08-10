@@ -3,12 +3,12 @@ from fastapi.responses import RedirectResponse, StreamingResponse
 import io
 import urllib.parse
 import secrets
-from utils.auth import get_current_user, require_role  # ⬅️ Import protection
+from utils.auth import get_current_user, require_role
 from utils.audit_logger import log_audit_event
 from database import get_db
 from sqlalchemy.orm import Session  
 from services.ehr.epic import EpicEHR
-from mock_epic_data import mock_patients, mock_document_reference, mock_binary_files
+from mock_epic_data import mock_patients, mock_binary_files
 from config import (
     EPIC_CLIENT_ID,
     EPIC_REDIRECT_URI,
@@ -57,6 +57,7 @@ async def epic_callback(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Token exchange failed: {str(e)}")
 
+#------Search and Retrieve Mock Data Endpoints------
 # ✅ Protected
 @router.get("/epic/patient")
 async def search_patient_epic(
@@ -73,10 +74,10 @@ async def search_patient_epic(
     ]
     log_audit_event(
         db=db,
-        user_id=user["sub"],  # or user.id depending on your user model
+        user_id=user["sub"],
         action="searched patients",
         resource_type="Patient",
-        resource_id=None  # No specific patient ID since this is a search  
+        resource_id=None 
     )
     return {
         "resourceType": "Bundle",
@@ -97,8 +98,8 @@ async def get_mock_patient_by_id(
 ):
     log_audit_event(
         db=db,
-        user_id=user["sub"],  # or user.id depending on your user model
-        action="searched_patient",
+        user_id=user["sub"], 
+        action="viewed_patient",
         resource_type="Patient",
         resource_id=patient_id
     )
@@ -130,7 +131,37 @@ def get_mock_documents(
         "total": len(documents),
     }
 
+#------Audit Logging Endpoint------
+@router.post("/epic/audit/log-view")
+def log_diagnostic_report_view(
+    request: Request,
+    patient_id: str = Query(...),
+    resource_id: str = Query(...),
+    resource_type: str = Query(...),
+    action: str = Query(...),
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    try:
+        ip_address = request.client.host
+
+        log_audit_event(
+            db=db,
+            user_id=user["sub"],
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            patient_id=patient_id,
+            ip_address=ip_address,
+        )
+    except Exception as e:
+        print(f"Audit log failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to log audit event")
+
+    return {"message": "Audit event logged"}
+
 # ✅ Protected
+#------Retrieve Binary Resource Endpoint------
 @router.get("/epic/binary/{binary_id}")
 def get_epic_binary(
     binary_id: str,
@@ -146,9 +177,3 @@ def get_epic_binary(
         media_type=file_data.get("content_type", "application/pdf"),
         headers={"Content-Disposition": f"inline; filename={binary_id}.pdf"},
     )
-
-# Public
-@router.get("/logout")
-async def logout(request: Request):
-    request.session.clear()
-    return {"message": "Logged out successfully"}

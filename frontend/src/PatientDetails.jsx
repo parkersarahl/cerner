@@ -147,9 +147,7 @@ const PatientDetail = () => {
         Authorization: `Bearer ${token}`,   // <-- Include auth token!
       },
     });
-    console.log("Final URL:", finalUrl);
-    console.log("Content-Type Sent in Accept:", contentType); 
-
+    
     const blob = new Blob([response.data], { type: contentType });
     const blobUrl = URL.createObjectURL(blob);
     window.open(blobUrl, "_blank");
@@ -171,7 +169,6 @@ const PatientDetail = () => {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     });
-    console.log("Audit log sent");
   } catch (err) {
     console.error("Audit log failed:", err);
   }
@@ -197,7 +194,6 @@ const PatientDetail = () => {
     <li key={`${type}-${id}`} className="my-1">
       <button
         onClick={() => {
-          console.log("Clicked item:", item);
           handleResourceClick(item);
           logResourceView(
             patientId,
