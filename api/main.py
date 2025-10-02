@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
-from routers import auth, epic_routes, patient, cerner_routes
+from routers import auth, patient, cerner_routes
 
 
 from starlette.middleware.sessions import SessionMiddleware
