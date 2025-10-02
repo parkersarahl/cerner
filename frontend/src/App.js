@@ -23,22 +23,12 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<CernerLogin />} />
+          <Route path="/" element={<FrontPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/epic-login" element={<EpicLogin />} />
           <Route path="/cerner-login" element={<CernerLogin />} />
 
           {/* Protected Routes */}
-          <Route
-            path="/frontpage"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout>
-                  <FrontPage />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
           <Route
             path="/search/:source"
             element={
