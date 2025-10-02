@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from routers import auth, epic_routes, patient, cerner_routes
-from database import engine, Base
 
 
 from starlette.middleware.sessions import SessionMiddleware
@@ -24,7 +23,6 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix="/api")
-app.include_router(epic_routes.router, prefix="/api")
 app.include_router(patient.router, prefix="/api")
 app.include_router(cerner_routes.router, prefix="/api")
 app.title = "ConnectEHR API"
