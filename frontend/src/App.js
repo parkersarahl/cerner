@@ -4,6 +4,7 @@ import FrontPage from './FrontPage';
 import PatientSearch from './PatientSearch';
 import PatientDetails from './PatientDetails';
 import EpicLogin from './EpicLogin';
+import CernerLogin from './CernerLogin';
 import Login from './Login';
 import ProtectedRoute from './ProtectedRoutes';
 import Navbar from './Navbar';
@@ -25,6 +26,7 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
           <Route path="/epic-login" element={<EpicLogin />} />
+          <Route path="/cerner-login" element={<CernerLogin />} />
 
           {/* Protected Routes */}
           <Route

@@ -14,7 +14,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://fhir-five.vercel.app",
+        "https://cerner-chi.vercel.app/",
         "http://localhost:3000"
     ],  
     allow_credentials=True,
