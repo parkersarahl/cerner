@@ -34,25 +34,25 @@ const PatientDetail = () => {
           axios.get(
             isEpicMock
               ? `${REACT_APP_API_URL}/api/epic/documentReferences?patientId=${patientId}&type=radiology`
-              : `${REACT_APP_API_URL}/api/cerner/diagnostic-reports/radiology?patient=${patientId}`,
+              : `${REACT_APP_API_URL}/cerner/diagnostic-reports/radiology?patient=${patientId}`,
               config
           ),
           axios.get(
             isEpicMock
               ? `${REACT_APP_API_URL}/api/epic/documentReferences?patientId=${patientId}&type=lab`
-              : `${REACT_APP_API_URL}/api/cerner/diagnostic-reports/labs?patient=${patientId}`,
+              : `${REACT_APP_API_URL}/cerner/diagnostic-reports/labs?patient=${patientId}`,
               config
           ),
           axios.get(
             isEpicMock
               ? `${REACT_APP_API_URL}/api/epic/documentReferences?patientId=${patientId}&type=clinical`
-              : `${REACT_APP_API_URL}/api/cerner/diagnostic-reports/clinical?patient=${patientId}`,
+              : `${REACT_APP_API_URL}/cerner/diagnostic-reports/clinical?patient=${patientId}`,
               config
         ),  
           axios.get(
             isEpicMock
               ? `${REACT_APP_API_URL}/api/epic/patient/${patientId}`
-              : `${REACT_APP_API_URL}/api/cerner/patient/${patientId}`,
+              : `${REACT_APP_API_URL}/cerner/patient/${patientId}`,
               config
           ),
         ]);

@@ -1,14 +1,19 @@
 # cerner_routes.py
-from fastapi import APIRouter, Request, HTTPException, Query
+import datetime
+from fastapi import APIRouter, Request, HTTPException, Query, Header
 from fastapi.responses import RedirectResponse
 import httpx
 import secrets
 import urllib.parse
+
+from jose import JWTError
 from config import (
     CERNER_CLIENT_ID,
     CERNER_CLIENT_SECRET,
     CERNER_TENANT_ID,
 )
+with open("C:\\Users\\sarah\\Desktop\\private_key.pem", "r") as f:
+    PRIVATE_KEY = f.read()
 
 router = APIRouter(prefix="/cerner")
 
@@ -21,7 +26,7 @@ CERNER_CLIENT_ID = "5926dd25-fd35-4807-8273-5aaf77360167"
 CERNER_CLIENT_SECRET = "MoSCsvLuwWAatHS70vVkyM9C8SmPjUvW"
 CERNER_TENANT_ID = "ec2458f2-1e24-41c8-b71b-0e701af7583d"
 # Define SMART scopes for Cerner
-CERNER_SCOPES = "openid fhirUser offline_access"
+CERNER_SCOPES = "openid fhirUser offline_access user/Patient.read user/Observation.read user/Practitioner.read"
 
 # Simple in-memory state store (replace with redis/db in production)
 STATE_STORE = {}
@@ -68,37 +73,52 @@ async def cerner_callback(
     auth = (CERNER_CLIENT_ID, CERNER_CLIENT_SECRET)
 
     async with httpx.AsyncClient() as client:
-        token_response = await client.post(CERNER_TOKEN_URL, data=data, headers=headers, auth=auth)
+        resp = await client.post(CERNER_TOKEN_URL, data=data, headers=headers, auth=auth)
 
-    if token_response.status_code != 200:
+    if resp.status_code != 200:
         raise HTTPException(
-            status_code=token_response.status_code,
-            detail=f"Token exchange failed: {token_response.text}"
+            status_code=resp.status_code,
+            detail=f"Token exchange failed: {resp.text}"
         )
+    token_json = resp.json()
+    access_token = token_json.get("access_token")
+    redirect_url = f"http://localhost:3000/search/cerner?token={access_token}&{state}"
+    return RedirectResponse(redirect_url)
+    #return token_response.json()
 
-    return token_response.json()
-
-
-@router.get("/patient/{patient_id}")
-async def get_patient(patient_id: str, access_token: str):
-    """Fetch a Patient resource from Cerner FHIR"""
-    fhir_url = f"https://fhir-ehr.cerner.com/r4/{CERNER_TENANT_ID}/Patient/{patient_id}"
+@router.get("/patient")
+async def search_patients(
+    person_id: str = Query(None, description="Patient ID"),
+    name: str = Query(None, description="Patient name"),
+    authorization: str = Header(None)
+):
+    """
+    Search Cerner FHIR patients by ID or name. Pass Bearer token in Authorization header.
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    access_token = authorization.split(" ")[1]
+    base_url = f"https://fhir-ehr.cerner.com/r4/{CERNER_TENANT_ID}/Patient"
     headers = {
         "Accept": "application/fhir+json",
         "Authorization": f"Bearer {access_token}"
     }
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(fhir_url, headers=headers)
+    query_params = {}
+    if person_id:
+        query_params["_id"] = person_id    # Cerner uses _id for specific patient search
+    if name:
+        query_params["name"] = name        # Optional: search by name
 
+    async with httpx.AsyncClient() as client:
+        response = await client.get(base_url, headers=headers, params=query_params)
+    
     if response.status_code != 200:
         raise HTTPException(
             status_code=response.status_code,
-            detail=f"Failed to fetch patient: {response.text}"
+            detail=f"Failed to search patients: {response.text}"
         )
-
     return response.json()
-
 
 @router.get("/practitioner/{practitioner_id}")
 async def get_practitioner(practitioner_id: str, access_token: str):

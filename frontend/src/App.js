@@ -27,18 +27,10 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/epic-login" element={<EpicLogin />} />
           <Route path="/cerner/login" element={<CernerLogin />} />
+          <Route path="/search/:source" element={<PatientSearch /> } />
 
           {/* Protected Routes */}
-          <Route
-            path="/search/:source"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout>
-                  <PatientSearch />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
+          
           <Route
             path="/patients/:patientId"
             element={
