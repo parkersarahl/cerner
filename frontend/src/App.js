@@ -26,7 +26,7 @@ function App() {
           <Route path="/" element={<FrontPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/epic-login" element={<EpicLogin />} />
-          <Route path="/cerner-login" element={<CernerLogin />} />
+          <Route path="/cerner/login" element={<CernerLogin />} />
 
           {/* Protected Routes */}
           <Route
