@@ -10,7 +10,7 @@ const CernerLogin = () => {
       
     console.log("Resolved apiBaseUrl =", apiBaseUrl);
 
-    window.location.href = `${apiBaseUrl}/api/cerner/login`;
+    window.location.href = `${apiBaseUrl}/cerner/login`;
   }, []);
 
   return <p>Redirecting to Cerner for login...</p>;
