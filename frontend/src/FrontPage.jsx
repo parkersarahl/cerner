@@ -30,6 +30,17 @@ const FrontPage = () => {
             className="w-20 h-20 object-contain"
           />
         </button>
+        <button
+          onClick={() => navigate('/epic/login')}
+          className="flex items-center justify-center bg-white shadow-lg rounded-lg p-4 hover:shadow-xl transition w-22 h-22"
+          aria-label="Go to Epic patient search"
+        >
+          <img
+            src={epicLogo}
+            alt="Epic"
+            className="w-20 h-20 object-contain"
+          />
+        </button>
       </div>
     </div>
     </>

@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import FrontPage from './FrontPage';
 import PatientSearch from './PatientSearch';
+import EpicSearch from './EpicSearch';
 import PatientDetails from './PatientDetails';
 import EpicLogin from './EpicLogin';
 import CernerLogin from './CernerLogin';
@@ -25,9 +26,10 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<FrontPage />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/epic-login" element={<EpicLogin />} />
+          <Route path="/epic/login" element={<EpicLogin />} />
           <Route path="/cerner/login" element={<CernerLogin />} />
-          <Route path="/search/:source" element={<PatientSearch /> } />
+          <Route path="/search/epic" element={<EpicSearch /> } />
+          <Route path="/search/cerner" element={<PatientSearch /> } />
 
           {/* Protected Routes */}
           
