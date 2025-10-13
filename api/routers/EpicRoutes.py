@@ -9,7 +9,7 @@ from routers.epicBase import EpicEHR
 
 
 EPIC_CLIENT_ID = "b3d4de6f-fff6-45cb-ad65-eff1c502c2c1"
-EPIC_REDIRECT_URI = "http://localhost:8000/epic/callback"
+EPIC_REDIRECT_URI = "https://cerner.onrender.com/epic/callback"
 EPIC_SCOPES = "openid fhirUser profile user/*.read offline_access"
 EPIC_AUTH_URL="https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize"
 EPIC_TOKEN_URL="https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token"
