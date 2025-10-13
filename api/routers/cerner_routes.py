@@ -21,7 +21,7 @@ router = APIRouter(prefix="/cerner")
 CERNER_AUTH_URL = f"https://authorization.cerner.com/tenants/{CERNER_TENANT_ID}/protocols/oauth2/profiles/smart-v1/personas/provider/authorize"
 CERNER_TOKEN_URL = f"https://authorization.cerner.com/tenants/{CERNER_TENANT_ID}/protocols/oauth2/profiles/smart-v1/token"
 CERNER_AUDIENCE_URL = f"https://fhir-ehr.cerner.com/r4/{CERNER_TENANT_ID}"
-CERNER_REDIRECT_URI = "http://localhost:8000/cerner/callback"
+CERNER_REDIRECT_URI = "https://cerner.onrender.com/cerner/callback"
 CERNER_CLIENT_ID = "5926dd25-fd35-4807-8273-5aaf77360167"
 CERNER_CLIENT_SECRET = "MoSCsvLuwWAatHS70vVkyM9C8SmPjUvW"
 CERNER_TENANT_ID = "ec2458f2-1e24-41c8-b71b-0e701af7583d"
@@ -82,7 +82,7 @@ async def cerner_callback(
         )
     token_json = resp.json()
     access_token = token_json.get("access_token")
-    redirect_url = f"http://localhost:3000/search/cerner?token={access_token}&{state}"
+    redirect_url = f"https://cerner-chi.vercel.app/search/cerner?token={access_token}&{state}"
     return RedirectResponse(redirect_url)
     #return token_response.json()
 
