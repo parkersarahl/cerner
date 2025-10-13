@@ -50,7 +50,7 @@ async def epic_callback(request: Request):
         print("Epic token exchange failed:", e)
         raise HTTPException(status_code=500, detail=f"Token exchange failed: {str(e)}")
 
-    redirect_url = f"http://localhost:3000/search/epic?token={access_token}"
+    redirect_url = f"https://cerner-chi.vercel.app/search/epic?token={access_token}"
     if state:
         redirect_url += f"&state={state}"
 

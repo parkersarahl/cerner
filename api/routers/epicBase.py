@@ -20,7 +20,7 @@ class EpicEHR(EHRVendor):
                     data={
                         "grant_type": "authorization_code",
                         "code": code,
-                        "redirect_uri": "http://localhost:8000/epic/callback",
+                        "redirect_uri": "https://cerner.onrender.com/epic/callback",
                         "client_id": "b3d4de6f-fff6-45cb-ad65-eff1c502c2c1",
                     },
                     headers={"Content-Type": "application/x-www-form-urlencoded"},
