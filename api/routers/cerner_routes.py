@@ -12,8 +12,8 @@ from config import (
     CERNER_CLIENT_SECRET,
     CERNER_TENANT_ID,
 )
-with open("C:\\Users\\sarah\\Desktop\\private_key.pem", "r") as f:
-    PRIVATE_KEY = f.read()
+#with open("C:\\Users\\sarah\\Desktop\\private_key.pem", "r") as f:
+    #PRIVATE_KEY = f.read()
 
 router = APIRouter(prefix="/cerner")
 
