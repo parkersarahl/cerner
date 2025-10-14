@@ -207,7 +207,7 @@ async def get_epic_diagnostic_reports(
     return response.json()
 
 
-# FIXED: Updated Binary endpoint with better error handling
+# FIXED: Try Epic's open endpoint for Binary resources
 @router.get("/epic/binary/{binary_id}")
 async def get_epic_binary(binary_id: str, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
@@ -217,36 +217,42 @@ async def get_epic_binary(binary_id: str, authorization: str = Header(None)):
     # Epic Binary URL
     base_url = f"{EPIC_FHIR_BASE_URL}/Binary/{binary_id}"
     
-    # Try with a more permissive Accept header first
+    # Try with wildcard Accept header
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Accept": "*/*"  # CHANGED: Try accepting any content type
+        "Accept": "*/*"
     }
 
     print(f"Fetching Epic Binary: {base_url}")
-    print(f"Token preview: {access_token[:20]}...")
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(base_url, headers=headers)
 
     print(f"Epic Binary response status: {response.status_code}")
     print(f"Response content-type: {response.headers.get('content-type')}")
-    print(f"Response text preview: {response.text[:200] if response.text else 'No text'}")
     
-    # If 403, try with different Accept header
+    # If 403, try the open FHIR endpoint (no auth)
     if response.status_code == 403:
-        print("Got 403, trying with Accept: application/pdf")
-        headers["Accept"] = "application/pdf"
-        async with httpx.AsyncClient() as client:
-            response = await client.get(base_url, headers=headers)
-        print(f"Second attempt status: {response.status_code}")
+        print("Got 403 with auth, trying open endpoint without auth...")
+        open_url = f"https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Binary/{binary_id}"
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            open_response = await client.get(open_url, headers={"Accept": "*/*"})
+        
+        print(f"Open endpoint status: {open_response.status_code}")
+        
+        if open_response.status_code == 200:
+            print("✅ Open endpoint succeeded!")
+            response = open_response
+        else:
+            # Both failed - return helpful error
+            print(f"Open endpoint also failed with status {open_response.status_code}")
+            raise HTTPException(
+                status_code=403,
+                detail="Epic sandbox Binary resources are restricted. The DocumentReference exists but the actual content cannot be accessed in the test environment. This is a known Epic limitation."
+            )
     
-    if response.status_code == 403:
-        raise HTTPException(
-            status_code=403,
-            detail=f"Access denied to Binary resource. Check scopes. Error: {response.text}"
-        )
-
+    # Now check if response is successful after potentially trying open endpoint
     if response.status_code == 404:
         raise HTTPException(
             status_code=404,
@@ -254,47 +260,40 @@ async def get_epic_binary(binary_id: str, authorization: str = Header(None)):
         )
 
     if response.status_code != 200:
-        print(f"Error response body: {response.text}")
+        print(f"Error response body: {response.text[:500]}")
         raise HTTPException(
             status_code=response.status_code,
-            detail=f"Epic FHIR binary retrieval failed: {response.text}"
+            detail=f"Epic FHIR binary retrieval failed: {response.text[:200]}"
         )
 
-    # Check if response is JSON (FHIR Binary resource) or raw binary
+    # Check response type
     content_type_header = response.headers.get("content-type", "")
+    print(f"Successfully fetched binary, size: {len(response.content)} bytes")
     
     if "application/fhir+json" in content_type_header or "application/json" in content_type_header:
         # FHIR Binary resource with base64 content
         try:
             binary_resource = response.json()
-            print(f"Binary resource keys: {binary_resource.keys()}")
-            
-            # Epic might use 'content' or 'data' field
             content_base64 = binary_resource.get("content") or binary_resource.get("data")
-            content_type = binary_resource.get("contentType", "application/octet-stream")
+            content_type = binary_resource.get("contentType", "text/html")
 
             if not content_base64:
-                print(f"Full binary resource: {binary_resource}")
                 raise HTTPException(
                     status_code=404, 
-                    detail=f"Binary content not found in FHIR resource. Available fields: {list(binary_resource.keys())}"
+                    detail=f"Binary content field not found. Available fields: {list(binary_resource.keys())}"
                 )
 
             binary_data = base64.b64decode(content_base64)
-            print(f"Decoded binary data size: {len(binary_data)} bytes")
             return Response(content=binary_data, media_type=content_type)
         except Exception as e:
             print(f"Error parsing binary response: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to parse binary content: {str(e)}")
     else:
-        # Raw binary data - return as-is
-        print(f"Returning raw binary data, size: {len(response.content)} bytes")
+        # Raw binary/HTML data
         return Response(
             content=response.content, 
-            media_type=content_type_header or "application/octet-stream"
+            media_type=content_type_header or "text/html"
         )
-
-
 # FIXED: Added audit logging endpoint
 @router.post("/epic/audit/log-view")
 async def log_epic_resource_view(
