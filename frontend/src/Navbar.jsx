@@ -1,62 +1,97 @@
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import ConnectEHRLogo from './graphics/logo'; 
+import { Link, useNavigate } from 'react-router-dom';
+import { logout, getUserRoles, hasRole } from '../api/axiosConfig';
 
 const Navbar = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-
-  // Adjust regex to match your actual patient detail route
-  const onPatientDetail = /^\/patients\/[^/]+$/.test(location.pathname);
-  const onSearchPageorPatientDetail = /^\/search\/[^/]+$/.test(location.pathname) || onPatientDetail; 
   
-  // Determine source from localStorage or default to 'epic'
-  const source = localStorage.getItem('searchSource') || 'epic'; // fallback if missing
-
-  const handleBackToSearch = () => {
-  navigate(`/search/${source}`);
-  };
-
+  // Get user info from localStorage
+  const username = localStorage.getItem('username') || 'User';
+  const roles = getUserRoles();
+  const isAdmin = hasRole('admin');
+  const isProvider = hasRole('provider');
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    sessionStorage.clear();
-    navigate('/login');
+    logout(); // This clears localStorage and redirects
   };
 
   return (
-    <header className="bg-gray-50 text-white flex justify-between items-center p-4 shadow-md">
-      <ConnectEHRLogo />
+    <nav className="bg-white shadow-md">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo/Brand */}
+          <div className="flex items-center">
+            <Link to="/frontpage" className="text-xl font-bold text-gray-800">
+              ConnectEHR
+            </Link>
+          </div>
 
-      <div className="flex gap-4 items-center">
-        {onPatientDetail && (
-          <button
-            onClick={handleBackToSearch}
-            className="bg-connectBlue text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            ← Back to Search
-          </button>
-        )}
-        {onSearchPageorPatientDetail && (
-          <button
-            onClick={() => navigate('/frontpage')}
-            className="bg-connectBlue text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            ← Back to Home
-          </button>
-        )}
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Link
+              to="/frontpage"
+              className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Home
+            </Link>
+            
+            {/* Only show Epic/Cerner links if user is provider or admin */}
+            {(isProvider || isAdmin) && (
+              <>
+                <Link
+                  to="/search/epic"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  Epic Search
+                </Link>
+                <Link
+                  to="/search/cerner"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  Cerner Search
+                </Link>
+              </>
+            )}
+            
+            {/* Admin-only link */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Admin Panel
+              </Link>
+            )}
+          </div>
 
-
-        <button
-          onClick={handleLogout}
-          className="bg-connectBlue text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Logout
-        </button>
+          {/* User Info & Logout */}
+          <div className="flex items-center space-x-4">
+            <div className="text-sm">
+              <span className="text-gray-700">
+                Welcome, <span className="font-semibold">{username}</span>
+              </span>
+              <div className="text-xs text-gray-500">
+                {roles.map(role => (
+                  <span 
+                    key={role}
+                    className="inline-block bg-blue-100 text-blue-700 px-2 py-0.5 rounded mr-1 mt-1"
+                  >
+                    {role}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
       </div>
-    </header>
+    </nav>
   );
 };
 
 export default Navbar;
-

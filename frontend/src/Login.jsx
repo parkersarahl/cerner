@@ -11,47 +11,57 @@ const API_BASE_URL = isLocalhost
   : process.env.REACT_APP_API_URL;
 
 const Login = () => {
-  const REACT_APP_API_URL = API_BASE_URL
+  const REACT_APP_API_URL = API_BASE_URL;
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    
     try {
       const response = await axios.post(`${REACT_APP_API_URL}/auth/login`, {
-        username: email.split('@')[0], // so 'provider@provider.com' → 'provider'
+        username: email.split('@')[0], // 'provider@provider.com' → 'provider'
         password,
       });
 
       const { access_token } = response.data;
       const decoded = jwtDecode(access_token);
-      const roles = decoded.roles || []; // Fallback to empty array if no roles present
+      const roles = decoded.roles || [];
       
-      //----Debugging Logs----//
-      //console.log("Decoded JWT:", decoded);
-      //console.log(roles);
+      console.log("Decoded JWT:", decoded);
+      console.log("User roles:", roles);
 
-      
+      // Check authorization
       if (!roles.includes('provider') && !roles.includes('admin')) {
         setError('You are not authorized to view this data');
         setLoading(false);
         return;
-    }
+      }
 
+      // ✅ Store in localStorage
       localStorage.setItem('token', access_token);
-      localStorage.setItem('roles', JSON.stringify(roles)); // Store roles in localStorage
+      localStorage.setItem('roles', JSON.stringify(roles));
+      localStorage.setItem('username', decoded.sub || email.split('@')[0]);
 
-      // Redirect to homepage or dashboard
+      // Redirect to frontpage
       navigate('/frontpage');
+      
     } catch (err) {
       console.error("Login error:", err);
-      setError('Invalid email or password');
+      
+      if (err.response?.status === 401) {
+        setError('Invalid email or password');
+      } else if (err.response?.status === 403) {
+        setError('Account is not authorized');
+      } else {
+        setError('Login failed. Please try again.');
+      }
+      
       setLoading(false);
     }
   };
@@ -69,23 +79,29 @@ const Login = () => {
 
       <div className="p-6 max-w-md mx-auto">
         <h1 className="text-2xl font-semibold mb-4">Login</h1>
-        {error && <p className="text-red-600">{error}</p>}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+            {error}
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <input
-            className="w-full mb-2 p-2 border rounded"
+            className="w-full mb-2 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             type="email"
-            placeholder="Email"
+            placeholder="Email (e.g. provider@provider.com)"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
+            required
           />
           <input
-            className="w-full mb-4 p-2 border rounded"
+            className="w-full mb-4 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
+            required
           />
           <button
             type="submit"
@@ -102,6 +118,12 @@ const Login = () => {
             )}
           </button>
         </form>
+        
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+          <p className="font-semibold text-blue-800 mb-1">Test Accounts:</p>
+          <p className="text-blue-700">Provider: provider@provider.com / provider</p>
+          <p className="text-blue-700">Admin: admin@admin.com / admin</p>
+        </div>
       </div>
     </div>
   );
