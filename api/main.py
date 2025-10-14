@@ -19,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router, prefix="/api")
+app.include_router(auth.router)
 app.include_router(patient.router, prefix="/api")
 app.include_router(cerner_routes.router)
 app.include_router(EpicRoutes.router)
