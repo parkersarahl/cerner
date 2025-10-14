@@ -1,119 +1,93 @@
 """
-Authentication utilities for validating JWT tokens and checking roles.
+Authentication router for login and user management.
 """
-from fastapi import Header, HTTPException, Depends
-from jose import jwt, JWTError
-from typing import List
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from datetime import datetime, timedelta
+from jose import jwt
+from passlib.context import CryptContext
 import os
 
-# These should match what's in your auth router
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
-ALGORITHM = "HS256"
+# Import SECRET_KEY and ALGORITHM from utils/auth.py to keep them consistent
+from utils.auth import SECRET_KEY, ALGORITHM
+
+router = APIRouter()
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+# Fake user database (replace with real database in production)
+fake_users_db = {
+    "provider": {
+        "id": "user-001",
+        "username": "provider@provider.com",
+        "hashed_password": pwd_context.hash("provider"),
+        "role": "provider"
+    },
+    "admin": {
+        "id": "user-002",
+        "username": "admin@admin.com",
+        "hashed_password": pwd_context.hash("admin"),
+        "role": "admin"
+    }
+}
 
 
-def get_current_user(authorization: str = Header(None)) -> dict:
+class LoginInput(BaseModel):
+    username: str
+    password: str
+
+
+@router.post("/auth/login")
+def login(input: LoginInput):
     """
-    Extract and validate JWT token from Authorization header.
-    Returns the decoded user payload.
+    Login endpoint - authenticates user and returns JWT token.
     
-    Usage in routes:
-        current_user: dict = Depends(get_current_user)
-    """
-    if not authorization:
-        raise HTTPException(
-            status_code=401,
-            detail="Authorization header is required"
-        )
-    
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid authorization header format. Expected 'Bearer <token>'"
-        )
-    
-    token = authorization.split(" ")[1]
-    
-    try:
-        # Decode and validate JWT
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except JWTError as e:
-        raise HTTPException(
-            status_code=401,
-            detail=f"Invalid authentication token: {str(e)}"
-        )
-
-
-def require_role(allowed_roles: List[str]):
-    """
-    Dependency factory that creates a role checker.
-    User must have at least ONE of the specified roles.
-    
-    Usage in routes:
-        current_user: dict = Depends(require_role(["provider", "admin"]))
-    
-    Args:
-        allowed_roles: List of role names. User needs at least one.
+    Request body:
+        {
+            "username": "provider",  // or email
+            "password": "provider"
+        }
     
     Returns:
-        Function that validates user has required role
+        {
+            "access_token": "eyJ...",
+            "token_type": "bearer"
+        }
     """
-    async def role_checker(current_user: dict = Depends(get_current_user)) -> dict:
-        # Get user's roles from JWT payload
-        user_roles = current_user.get("roles", [])
-        
-        # Check if user has at least one of the required roles
-        has_required_role = any(role in user_roles for role in allowed_roles)
-        
-        if not has_required_role:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Access denied. Required roles: {', '.join(allowed_roles)}. Your roles: {', '.join(user_roles) if user_roles else 'none'}"
-            )
-        
-        # Log access (optional)
-        username = current_user.get("sub", "unknown")
-        print(f"✅ User '{username}' with roles {user_roles} accessed protected endpoint")
-        
-        return current_user
+    # Try direct key lookup first (username without @domain)
+    user = fake_users_db.get(input.username)
     
-    return role_checker
-
-
-def require_provider(current_user: dict = Depends(get_current_user)) -> dict:
-    """
-    Shortcut dependency that requires 'provider' or 'admin' role.
-    
-    Usage in routes:
-        current_user: dict = Depends(require_provider)
-    
-    This is equivalent to:
-        current_user: dict = Depends(require_role(["provider", "admin"]))
-    """
-    user_roles = current_user.get("roles", [])
-    
-    if "provider" not in user_roles and "admin" not in user_roles:
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied. This endpoint requires provider or admin privileges."
+    # If not found, try lookup by full email
+    if not user:
+        user = next(
+            (u for u in fake_users_db.values() if u["username"] == input.username),
+            None
         )
-    
-    return current_user
 
-
-def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
-    """
-    Dependency that requires 'admin' role specifically.
-    
-    Usage in routes:
-        current_user: dict = Depends(require_admin)
-    """
-    user_roles = current_user.get("roles", [])
-    
-    if "admin" not in user_roles:
+    # Verify user exists and password is correct
+    if not user or not pwd_context.verify(input.password, user["hashed_password"]):
         raise HTTPException(
-            status_code=403,
-            detail="Access denied. This endpoint requires admin privileges."
+            status_code=401, 
+            detail="Invalid credentials"
         )
+
+    # Create JWT token
+    token_data = {
+        "sub": user["username"],           # Subject (username)
+        "roles": [user["role"]],           # User roles as array
+        "user_id": user["id"],             # User ID
+        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),  # Expiration
+        "iat": datetime.utcnow()           # Issued at
+    }
+
+    # Encode JWT
+    token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
     
-    return current_user
+    print(f"✅ User '{user['username']}' logged in with role '{user['role']}'")
+    
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
+

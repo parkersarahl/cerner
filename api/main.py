@@ -20,6 +20,7 @@ app.add_middleware(
 )
 
 app.include_router(patient.router, prefix="/api")
+app.include_router(auth.router)
 app.include_router(cerner_routes.router)
 app.include_router(EpicRoutes.router)
 app.title = "ConnectEHR API"
