@@ -3,15 +3,15 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ProtectedRoute from './ProtectedRoutes';
 
 // Import your components
-import Navbar from './components/Navbar';
-import Login from './pages/Login';
-import FrontPage from './pages/FrontPage';
-import EpicLogin from './pages/EpicLogin';
-import CernerLogin from './pages/CernerLogin';
-import EpicSearch from './pages/EpicSearch';
-import CernerSearch from './pages/CernerSearch';
-import EpicDetails from './pages/EpicDetails';
-import CernerDetails from './pages/CernerDetails';
+import Navbar from './Navbar';
+import Login from './Login';
+import FrontPage from './FrontPage';
+import EpicLogin from './EpicLogin';
+import CernerLogin from './CernerLogin';
+import EpicSearch from './EpicSearch';
+import CernerSearch from '.CernerSearch';
+import EpicDetails from './EpicDetails';
+import CernerDetails from './CernerDetails';
 
 // ==================== Protected Layout ====================
 const ProtectedLayout = ({ children }) => (
