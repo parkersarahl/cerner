@@ -1,10 +1,11 @@
 # cerner_routes.py
 import datetime
-from fastapi import APIRouter, Request, HTTPException, Query, Header
+from fastapi import APIRouter, Request, HTTPException, Query, Header, Response
 from fastapi.responses import RedirectResponse
 import httpx
 import secrets
 import urllib.parse
+import base64
 
 from jose import JWTError
 from config import (
@@ -161,3 +162,64 @@ async def get_observations(patient_id: str, access_token: str):
         )
 
     return response.json()
+
+@router.get("/diagnostic-reports/{report_type}")
+async def get_cerner_diagnostic_reports(report_type: str, patient: str, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    access_token = authorization.split(" ")[1]
+
+    # Map frontend report type to Cerner FHIR category codes
+    category_map = {
+        "radiology": "RAD",
+        "labs": "LAB",
+        "clinical": "CLIN",
+    }
+    category_code = category_map.get(report_type.lower())
+    if not category_code:
+        raise HTTPException(status_code=400, detail="Invalid report type")
+
+    url = f"{CERNER_AUDIENCE_URL}/DiagnosticReport?patient={patient}&category={category_code}"
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, headers=headers)
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"Cerner FHIR diagnostic reports retrieval failed: {response.text}"
+        )
+
+    return response.json()
+
+# ------------------- Binary -------------------
+@router.get("/binary/{binary_id}")
+async def get_cerner_binary(binary_id: str, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    access_token = authorization.split(" ")[1]
+
+    base_url = f"{CERNER_AUDIENCE_URL}/Binary/{binary_id}"
+    headers = {"Authorization": f"Bearer {access_token}", "Accept": "application/fhir+json"}
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(base_url, headers=headers)
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"Cerner FHIR binary retrieval failed: {response.text}"
+        )
+
+    binary_resource = response.json()
+    content_base64 = binary_resource.get("content")
+    content_type = binary_resource.get("contentType", "application/octet-stream")
+
+    if not content_base64:
+        raise HTTPException(status_code=404, detail="Binary content not found")
+
+    binary_data = base64.b64decode(content_base64)
+    return Response(content=binary_data, media_type=content_type)
+
+

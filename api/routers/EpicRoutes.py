@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Path, Request, HTTPException, Query, Header
+import base64
+import io
+from fastapi import APIRouter, Path, Request, HTTPException, Query, Header, Response
 from fastapi.responses import RedirectResponse, StreamingResponse
 import httpx
 import urllib.parse
 import secrets
+import base
 #from sqlalchemy.orm import Session  
 from routers.epicBase import EpicEHR
 
@@ -96,3 +99,69 @@ async def search_patients(
         )
 
     return response.json()
+
+@router.get("/diagnostic-reports/{report_type}")
+async def get_epic_diagnostic_reports(report_type: str, patient: str, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    access_token = authorization.split(" ")[1]
+
+    # Map frontend report type to Epic FHIR category codes
+    category_map = {
+        "radiology": "RAD",
+        "labs": "LAB",
+        "clinical": "CLIN",
+    }
+    category_code = category_map.get(report_type.lower())
+    if not category_code:
+        raise HTTPException(status_code=400, detail="Invalid report type")
+
+    url = f"{EPIC_FHIR_BASE_URL}/DiagnosticReport?patient={patient}&category={category_code}"
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, headers=headers)
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"Epic FHIR diagnostic reports retrieval failed: {response.text}"
+        )
+
+    return response.json()
+# ------------------- Binary -------------------
+@router.get("/binary/{binary_id}")
+async def get_epic_binary(binary_id: str, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    access_token = authorization.split(" ")[1]
+
+    # Determine the full URL to fetch binary
+    base_url = f"{EPIC_FHIR_BASE_URL}/Binary/{binary_id}"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/fhir+json"
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(base_url, headers=headers)
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"Epic FHIR binary retrieval failed: {response.text}"
+        )
+
+    binary_resource = response.json()
+
+    # FHIR Binary content is Base64
+    content_base64 = binary_resource.get("content")
+    content_type = binary_resource.get("contentType", "application/octet-stream")
+    
+    if not content_base64:
+        raise HTTPException(status_code=404, detail="Binary content not found")
+
+    # Decode and return
+    binary_data = base64.b64decode(content_base64)
+    return Response(content=binary_data, media_type=content_type)
+
