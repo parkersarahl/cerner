@@ -29,14 +29,10 @@ const EpicPatientDetails = () => {
   useEffect(() => {
     const fetchPatientData = async () => {
       try {
-        const ehrSource = localStorage.getItem("ehrSource");
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("epic_token"); // FIXED: Use epic_token instead of token
 
-        if (!ehrSource || ehrSource !== "epic") {
-          console.warn("EHR source not set or not Epic — redirecting...");
-          navigate("/frontpage", { replace: true });
-          return;
-        }
+        console.log("Epic Patient Details - Patient ID:", patientId);
+        console.log("Token exists:", !!token);
 
         if (!token) {
           console.error("Missing Epic token — redirecting...");
@@ -47,12 +43,15 @@ const EpicPatientDetails = () => {
         const headers = { Authorization: `Bearer ${token}` };
         const baseUrl = process.env.REACT_APP_API_URL;
 
+        console.log("Making requests with token:", token ? "Token exists" : "No token");
+        console.log("Base URL:", baseUrl);
+
         // Fetch all resources in parallel
         const [patientRes, radiologyRes, labRes, notesRes] = await Promise.all([
           axios.get(`${baseUrl}/epic/patient/${patientId}`, { headers }),
           axios.get(`${baseUrl}/epic/documentReferences?patientId=${patientId}&type=radiology`, { headers }),
           axios.get(`${baseUrl}/epic/documentReferences?patientId=${patientId}&type=lab`, { headers }),
-          axios.get(`${baseUrl}/ epic/documentReferences?patientId=${patientId}&type=clinical`, { headers })
+          axios.get(`${baseUrl}/epic/documentReferences?patientId=${patientId}&type=clinical`, { headers })
         ]);
 
         console.log("Patient Response:", patientRes.data);
@@ -128,7 +127,7 @@ const EpicPatientDetails = () => {
       : `${baseUrl}/epic/binary/${binaryId}`;
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("epic_token"); // FIXED: Use epic_token
       const response = await axios.get(finalUrl, {
         responseType: "blob",
         headers: {
@@ -235,7 +234,7 @@ const EpicPatientDetails = () => {
           action: action,
         },
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("epic_token")}`, // FIXED: Use epic_token
         },
       });
     } catch (err) {
