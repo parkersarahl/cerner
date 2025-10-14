@@ -13,8 +13,6 @@ from config import (
     CERNER_CLIENT_SECRET,
     CERNER_TENANT_ID,
 )
-#with open("C:\\Users\\sarah\\Desktop\\private_key.pem", "r") as f:
-    #PRIVATE_KEY = f.read()
 
 router = APIRouter(prefix="/cerner")
 
@@ -85,7 +83,7 @@ async def cerner_callback(
     access_token = token_json.get("access_token")
     redirect_url = f"https://cerner-chi.vercel.app/search/cerner?token={access_token}&{state}"
     return RedirectResponse(redirect_url)
-    #return token_response.json()
+
 
 @router.get("/patient")
 async def search_patients(
@@ -139,6 +137,7 @@ async def get_patient_by_id(patient_id: str, authorization: str = Header(None)):
 
     return response.json()
 
+
 @router.get("/observations/{patient_id}")
 async def get_observations(patient_id: str, access_token: str):
     """Fetch Observations for a given patient"""
@@ -160,6 +159,7 @@ async def get_observations(patient_id: str, access_token: str):
 
     return response.json()
 
+
 @router.get("/diagnostic-reports/{report_type}")
 async def get_cerner_diagnostic_reports(report_type: str, patient: str, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
@@ -177,7 +177,10 @@ async def get_cerner_diagnostic_reports(report_type: str, patient: str, authoriz
         raise HTTPException(status_code=400, detail="Invalid report type")
 
     url = f"{CERNER_AUDIENCE_URL}/DiagnosticReport?patient={patient}&category={category_code}"
-    headers = {"Authorization": f"Bearer {access_token}"}
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/fhir+json"  # FIXED: Added Accept header
+    }
 
     async with httpx.AsyncClient() as client:
         response = await client.get(url, headers=headers)
@@ -189,6 +192,43 @@ async def get_cerner_diagnostic_reports(report_type: str, patient: str, authoriz
         )
 
     return response.json()
+
+
+# ------------------- Document References -------------------
+@router.get("/document-references/{doc_type}")
+async def get_cerner_document_references(doc_type: str, patient: str, authorization: str = Header(None)):
+    """
+    Fetch DocumentReference resources from Cerner FHIR API.
+    doc_type can be 'clinical' or other types as needed.
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    access_token = authorization.split(" ")[1]
+
+    # Build the DocumentReference query
+    url = f"{CERNER_AUDIENCE_URL}/DocumentReference?patient={patient}"
+    
+    # Optional: Add type filtering if needed
+    # For clinical notes, you might want to add: &type=clinical-note
+    if doc_type.lower() == "clinical":
+        url += "&type=http://loinc.org|11488-4"  # Clinical Note type code
+    
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/fhir+json"  # Added Accept header
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, headers=headers)
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"Cerner FHIR document references retrieval failed: {response.text}"
+        )
+
+    return response.json()
+
 
 # ------------------- Binary -------------------
 @router.get("/binary/{binary_id}")
@@ -218,5 +258,3 @@ async def get_cerner_binary(binary_id: str, authorization: str = Header(None)):
 
     binary_data = base64.b64decode(content_base64)
     return Response(content=binary_data, media_type=content_type)
-
-
