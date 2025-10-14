@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getUserRoles, hasRole } from '../api/axiosConfig';
+import { getUserRoles, hasRole } from './axiosConfig';
 
 const EpicLogin = () => {
   const navigate = useNavigate();
