@@ -5,7 +5,7 @@ import { getUserRoles, hasRole } from './axiosConfig';
 const EpicLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [status, setStatus] = useState('checking'); // checking, redirecting, success, error
+  const [status, setStatus] = useState('checking'); // checking, redirecting, success, error or boohack
   const [message, setMessage] = useState('');
   
   const userRoles = getUserRoles();
