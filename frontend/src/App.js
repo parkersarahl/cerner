@@ -42,7 +42,9 @@ function App() {
             path="/epic/login"
             element={
               <ProtectedRoute>
-                <EpicLogin />
+                <ProtectedLayout>
+                  <EpicLogin />
+                </ProtectedLayout>
               </ProtectedRoute>
             }
           />
@@ -50,7 +52,9 @@ function App() {
             path="/cerner/login"
             element={
               <ProtectedRoute>
-                <CernerLogin />
+                <ProtectedLayout>
+                  <CernerLogin />
+                </ProtectedLayout>
               </ProtectedRoute>
             }
           />
@@ -58,7 +62,9 @@ function App() {
             path="/search/epic"
             element={
               <ProtectedRoute>
-                <EpicSearch />
+                <ProtectedLayout>
+                  <EpicSearch />
+                </ProtectedLayout>
               </ProtectedRoute>
             }
           />
@@ -66,7 +72,9 @@ function App() {
             path="/search/cerner"
             element={
               <ProtectedRoute>
-                <CernerSearch />
+                <ProtectedLayout>
+                  <CernerSearch />
+                </ProtectedLayout>
               </ProtectedRoute>
             }
           />
@@ -74,7 +82,9 @@ function App() {
             path="/epic/patient/:patientId"
             element={
               <ProtectedRoute>
-                <EpicDetails />
+                <ProtectedLayout>
+                  <EpicDetails />
+                </ProtectedLayout>
               </ProtectedRoute>
             }
           />
@@ -82,7 +92,9 @@ function App() {
             path="/cerner/patient/:patientId"
             element={
               <ProtectedRoute>
-                <CernerDetails />
+                <ProtectedLayout>
+                  <CernerDetails />
+                </ProtectedLayout>
               </ProtectedRoute>
             }
           />
