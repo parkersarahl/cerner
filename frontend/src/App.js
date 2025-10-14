@@ -31,19 +31,8 @@ function App() {
           <Route path="/cerner/login" element={<CernerLogin />} />
           <Route path="/search/epic" element={<EpicSearch /> } />
           <Route path="/search/cerner" element={<PatientSearch /> } />
-
-          {/* Protected Routes */}
-          
-          <Route
-            path="/patients/:patientId"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout>
-                  <PatientDetails />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/epic/patient/:patientId" element={<PatientDetails /> } />
+          <Route path="/cerner/patient/:patientId" element={<PatientDetails /> } />
         </Routes>
       </Router>
     </div>
