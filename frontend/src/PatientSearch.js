@@ -159,7 +159,7 @@ const PatientSearch = () => {
             className="border p-2 rounded shadow hover:bg-gray-100 cursor-pointer"
             onClick={() => {
               localStorage.setItem('searchSource', 'cerner');
-              navigate(`/patients/${patient.id}`);
+              navigate(`/cerner/patient/${patient.id}`);
             }}
           >
             <span className="text-blue-600 hover:underline">

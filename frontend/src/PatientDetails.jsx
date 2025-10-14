@@ -12,6 +12,12 @@ const PatientDetail = () => {
   const [patient, setPatient] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchSource, setSearchSource] = useState('');
+
+  useEffect(() => {
+    const source = localStorage.getItem('searchSource');
+    setSearchSource(source);
+  }, []);
 
   
 
@@ -22,7 +28,7 @@ const PatientDetail = () => {
         setError('');
         const token = localStorage.getItem('token');
 
-        const isEpicMock = patientId.startsWith('mock-');
+        const isSearchSource = searchSource === 'epic'; // or 'cerner', determine based on your app logic
 
         const config = {
           headers: {
@@ -32,25 +38,25 @@ const PatientDetail = () => {
 
         const [radiologyRes, labRes, notesRes, patientRes] = await Promise.all([
           axios.get(
-            isEpicMock
+            isSearchSource
               ? `${REACT_APP_API_URL}/api/epic/documentReferences?patientId=${patientId}&type=radiology`
               : `${REACT_APP_API_URL}/cerner/diagnostic-reports/radiology?patient=${patientId}`,
               config
           ),
           axios.get(
-            isEpicMock
+            isSearchSource
               ? `${REACT_APP_API_URL}/api/epic/documentReferences?patientId=${patientId}&type=lab`
               : `${REACT_APP_API_URL}/cerner/diagnostic-reports/labs?patient=${patientId}`,
               config
           ),
           axios.get(
-            isEpicMock
+            isSearchSource
               ? `${REACT_APP_API_URL}/api/epic/documentReferences?patientId=${patientId}&type=clinical`
               : `${REACT_APP_API_URL}/cerner/diagnostic-reports/clinical?patient=${patientId}`,
               config
         ),  
           axios.get(
-            isEpicMock
+            isSearchSource
               ? `${REACT_APP_API_URL}/api/epic/patient/${patientId}`
               : `${REACT_APP_API_URL}/cerner/patient/${patientId}`,
               config
@@ -120,20 +126,20 @@ const PatientDetail = () => {
     contentType = "application/pdf";
   }
   const REACT_APP_API_URL = process.env.REACT_APP_API_URL;
-  const isEpicMock = patientId.startsWith("mock-");
+  const isSearchSource = searchSource === 'epic';
   const isAbsoluteUrl = url.startsWith("http://") || url.startsWith("https://");
 
    const finalUrl = isAbsoluteUrl
     ? url
-    : isEpicMock
-    ? `${REACT_APP_API_URL}/api/epic/binary/${url}`
+    : isSearchSource
+    ? `${REACT_APP_API_URL}/epic/binary/${url}`
     : `${REACT_APP_API_URL}/cerner/binary/${url}`;
 
   // If absolute URL, extract binary_id from it if it points to your backend
-  if (isAbsoluteUrl && isEpicMock) {
+  if (isAbsoluteUrl && isSearchSource) {
     const parts = url.split("/");
     url = parts[parts.length - 1];  // e.g. 'rad-mock-01'
-  } else if (isAbsoluteUrl && !isEpicMock) {
+  } else if (isAbsoluteUrl && !isSearchSource) {
     const parts = url.split("/");
     url = parts[parts.length - 1];
   }
