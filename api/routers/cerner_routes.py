@@ -25,7 +25,7 @@ CERNER_CLIENT_ID = "5926dd25-fd35-4807-8273-5aaf77360167"
 CERNER_CLIENT_SECRET = "MoSCsvLuwWAatHS70vVkyM9C8SmPjUvW"
 CERNER_TENANT_ID = "ec2458f2-1e24-41c8-b71b-0e701af7583d"
 # Define SMART scopes for Cerner
-CERNER_SCOPES = "openid fhirUser offline_access user/Patient.read user/Observation.read user/Practitioner.read user/DiagnosticReport.read user/DocumentReference.read"
+CERNER_SCOPES = "openid fhirUser offline_access user/Patient.read user/Observation.read user/Practitioner.read user/DiagnosticReport.read user/DocumentReference.read, user/Binary.read"
 
 # Simple in-memory state store (replace with redis/db in production)
 STATE_STORE = {}
@@ -238,10 +238,28 @@ async def get_cerner_binary(binary_id: str, authorization: str = Header(None)):
     access_token = authorization.split(" ")[1]
 
     base_url = f"{CERNER_AUDIENCE_URL}/Binary/{binary_id}"
-    headers = {"Authorization": f"Bearer {access_token}", "Accept": "application/fhir+json"}
+    
+    # Try with Accept: application/fhir+json first to get the FHIR Binary resource
+    headers = {
+        "Authorization": f"Bearer {access_token}", 
+        "Accept": "application/fhir+json"
+    }
 
     async with httpx.AsyncClient() as client:
         response = await client.get(base_url, headers=headers)
+
+    # Log the full response for debugging
+    print(f"Binary request to: {base_url}")
+    print(f"Status code: {response.status_code}")
+    print(f"Response headers: {response.headers}")
+    print(f"Response body preview: {response.text[:500] if response.text else 'empty'}")
+
+    if response.status_code == 403:
+        # 403 might mean insufficient scopes or the Binary resource requires different access
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied to Binary resource. You may need user/Binary.read scope. Error: {response.text}"
+        )
 
     if response.status_code != 200:
         raise HTTPException(
@@ -249,12 +267,20 @@ async def get_cerner_binary(binary_id: str, authorization: str = Header(None)):
             detail=f"Cerner FHIR binary retrieval failed: {response.text}"
         )
 
-    binary_resource = response.json()
-    content_base64 = binary_resource.get("content")
-    content_type = binary_resource.get("contentType", "application/octet-stream")
+    # Check if response is JSON (FHIR Binary resource) or raw binary data
+    content_type_header = response.headers.get("content-type", "")
+    
+    if "application/fhir+json" in content_type_header or "application/json" in content_type_header:
+        # Response is a FHIR Binary resource with base64 encoded content
+        binary_resource = response.json()
+        content_base64 = binary_resource.get("content") or binary_resource.get("data")
+        content_type = binary_resource.get("contentType", "application/octet-stream")
 
-    if not content_base64:
-        raise HTTPException(status_code=404, detail="Binary content not found")
+        if not content_base64:
+            raise HTTPException(status_code=404, detail="Binary content not found in FHIR resource")
 
-    binary_data = base64.b64decode(content_base64)
-    return Response(content=binary_data, media_type=content_type)
+        binary_data = base64.b64decode(content_base64)
+        return Response(content=binary_data, media_type=content_type)
+    else:
+        # Response is raw binary data
+        return Response(content=response.content, media_type=content_type_header or "application/octet-stream")
