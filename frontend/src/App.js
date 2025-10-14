@@ -30,7 +30,7 @@ function App() {
           <Route path="/epic/login" element={<EpicLogin />} />
           <Route path="/cerner/login" element={<CernerLogin />} />
           <Route path="/epic/search" element={<EpicSearch /> } />
-          <Route path="/cerner/search" element={<CernerSearch /> } />
+          <Route path="/search/cerner" element={<CernerSearch /> } />
           <Route path="/epic/patient/:patientId" element={<EpicDetails /> } />
           <Route path="/cerner/patient/:patientId" element={<CernerDetails /> } />
         </Routes>
