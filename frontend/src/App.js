@@ -29,7 +29,7 @@ function App() {
           <Route path="/frontpage" element={<FrontPage />} />
           <Route path="/epic/login" element={<EpicLogin />} />
           <Route path="/cerner/login" element={<CernerLogin />} />
-          <Route path="/epic/search" element={<EpicSearch /> } />
+          <Route path="/search/epic" element={<EpicSearch /> } />
           <Route path="/search/cerner" element={<CernerSearch /> } />
           <Route path="/epic/patient/:patientId" element={<EpicDetails /> } />
           <Route path="/cerner/patient/:patientId" element={<CernerDetails /> } />
