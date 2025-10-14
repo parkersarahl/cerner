@@ -134,9 +134,86 @@ const CernerPatientDetails = () => {
         },
       });
 
-      const blob = new Blob([response.data], { type: contentType });
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, "_blank");
+      // Check actual content type from response
+      const actualContentType = response.headers['content-type'] || contentType;
+      console.log("Content type:", actualContentType);
+      console.log("Response size:", response.data.size);
+
+      // For text-based content, convert to readable format
+      if (actualContentType.includes('text/plain') || 
+          actualContentType.includes('text/html') ||
+          (response.data.size < 10000 && actualContentType.includes('octet-stream'))) {
+        
+        // Read the blob as text
+        const text = await response.data.text();
+        
+        // Create a formatted HTML page
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Lab Report</title>
+            <style>
+              body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                max-width: 800px;
+                margin: 40px auto;
+                padding: 20px;
+                line-height: 1.6;
+                background-color: #f5f5f5;
+              }
+              .report-container {
+                background: white;
+                padding: 30px;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+              }
+              h1 {
+                color: #2c3e50;
+                border-bottom: 3px solid #3498db;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+              }
+              .report-content {
+                white-space: pre-wrap;
+                font-family: 'Courier New', monospace;
+                background-color: #f8f9fa;
+                padding: 20px;
+                border-radius: 4px;
+                border-left: 4px solid #3498db;
+              }
+              .metadata {
+                color: #7f8c8d;
+                font-size: 0.9em;
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 1px solid #ecf0f1;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="report-container">
+              <h1>Lab Report / Clinical Document</h1>
+              <div class="report-content">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+              <div class="metadata">
+                <p><strong>Content Type:</strong> ${actualContentType}</p>
+                <p><strong>Size:</strong> ${response.data.size} bytes</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+        
+        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(htmlBlob);
+        window.open(blobUrl, "_blank");
+      } else {
+        // For PDFs and other binary content, open directly
+        const blob = new Blob([response.data], { type: actualContentType });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
+      }
     } catch (err) {
       setError(`Failed to open report file: ${err.response?.status || err.message}`);
       console.error("Binary fetch error:", err);
