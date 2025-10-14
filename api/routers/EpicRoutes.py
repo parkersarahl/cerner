@@ -64,7 +64,7 @@ async def search_patients(
     patient_id: str = Query(None, description="FHIR Patient ID (use _id for exact match)"),
     name: str = Query(None, description="Patient name (optional)"),
     authorization: str = Header(None),
-    current_user: dict = Depends(require_role(["provider"],["admin"]))
+    current_user: dict = Depends(require_role(["provider","admin"]))
 ):
     """
     Search Epic FHIR patients by ID or name.
@@ -103,7 +103,7 @@ async def search_patients(
 async def get_patient_by_id(
     patient_id: str, 
     authorization: str = Header(None),
-    current_user: dict = Depends(require_role(["provider"],["admin"]))
+    current_user: dict = Depends(require_role(["provider", "admin"]))
 ):
     """
     Get a specific patient by ID.
