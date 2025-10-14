@@ -48,6 +48,10 @@ const PatientDetail = () => {
           axios.get(`${REACT_APP_API_URL}/${storedEhr}/patient/${patientId}`, config),
         ]);
 
+        console.log('Fetching resources from:', `${REACT_APP_API_URL}/${ehrSource}/diagnostic-reports/radiology?patient=${patientId}`);
+        console.log('Token:', token);
+
+
         const getResources = (bundle) => bundle?.entry?.map((e) => e.resource) || [];
 
         setClinicalNotes(getResources(notesRes.data));
