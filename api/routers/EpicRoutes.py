@@ -214,26 +214,47 @@ async def get_epic_binary(binary_id: str, authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     access_token = authorization.split(" ")[1]
 
+    # Epic Binary URL
     base_url = f"{EPIC_FHIR_BASE_URL}/Binary/{binary_id}"
+    
+    # Try with a more permissive Accept header first
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Accept": "application/fhir+json"
+        "Accept": "*/*"  # CHANGED: Try accepting any content type
     }
+
+    print(f"Fetching Epic Binary: {base_url}")
+    print(f"Token preview: {access_token[:20]}...")
 
     async with httpx.AsyncClient() as client:
         response = await client.get(base_url, headers=headers)
 
-    # Log for debugging
-    print(f"Binary request to: {base_url}")
-    print(f"Status code: {response.status_code}")
+    print(f"Epic Binary response status: {response.status_code}")
+    print(f"Response content-type: {response.headers.get('content-type')}")
+    print(f"Response text preview: {response.text[:200] if response.text else 'No text'}")
+    
+    # If 403, try with different Accept header
+    if response.status_code == 403:
+        print("Got 403, trying with Accept: application/pdf")
+        headers["Accept"] = "application/pdf"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(base_url, headers=headers)
+        print(f"Second attempt status: {response.status_code}")
     
     if response.status_code == 403:
         raise HTTPException(
             status_code=403,
-            detail=f"Access denied to Binary resource. Error: {response.text}"
+            detail=f"Access denied to Binary resource. Check scopes. Error: {response.text}"
+        )
+
+    if response.status_code == 404:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Binary resource not found: {binary_id}"
         )
 
     if response.status_code != 200:
+        print(f"Error response body: {response.text}")
         raise HTTPException(
             status_code=response.status_code,
             detail=f"Epic FHIR binary retrieval failed: {response.text}"
@@ -244,18 +265,34 @@ async def get_epic_binary(binary_id: str, authorization: str = Header(None)):
     
     if "application/fhir+json" in content_type_header or "application/json" in content_type_header:
         # FHIR Binary resource with base64 content
-        binary_resource = response.json()
-        content_base64 = binary_resource.get("content") or binary_resource.get("data")
-        content_type = binary_resource.get("contentType", "application/octet-stream")
+        try:
+            binary_resource = response.json()
+            print(f"Binary resource keys: {binary_resource.keys()}")
+            
+            # Epic might use 'content' or 'data' field
+            content_base64 = binary_resource.get("content") or binary_resource.get("data")
+            content_type = binary_resource.get("contentType", "application/octet-stream")
 
-        if not content_base64:
-            raise HTTPException(status_code=404, detail="Binary content not found in FHIR resource")
+            if not content_base64:
+                print(f"Full binary resource: {binary_resource}")
+                raise HTTPException(
+                    status_code=404, 
+                    detail=f"Binary content not found in FHIR resource. Available fields: {list(binary_resource.keys())}"
+                )
 
-        binary_data = base64.b64decode(content_base64)
-        return Response(content=binary_data, media_type=content_type)
+            binary_data = base64.b64decode(content_base64)
+            print(f"Decoded binary data size: {len(binary_data)} bytes")
+            return Response(content=binary_data, media_type=content_type)
+        except Exception as e:
+            print(f"Error parsing binary response: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to parse binary content: {str(e)}")
     else:
-        # Raw binary data
-        return Response(content=response.content, media_type=content_type_header or "application/octet-stream")
+        # Raw binary data - return as-is
+        print(f"Returning raw binary data, size: {len(response.content)} bytes")
+        return Response(
+            content=response.content, 
+            media_type=content_type_header or "application/octet-stream"
+        )
 
 
 # FIXED: Added audit logging endpoint
