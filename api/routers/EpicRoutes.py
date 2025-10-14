@@ -61,18 +61,21 @@ async def epic_callback(request: Request):
 
 @router.get("/epic/patient")
 async def search_patients(
-    patient_id: str = Query(None, description="FHIR Patient ID (use _id for exact match)"),
-    name: str = Query(None, description="Patient name (optional)"),
-    authorization: str = Header(None),
-    current_user: dict = Depends(require_role(["provider","admin"]))
+    patient_id: str = Query(None, description="FHIR Patient ID"),
+    name: str = Query(None, description="Patient name"),
+    epic_token: str = Header(..., alias="Epic-Authorization"),
+    current_user: dict = Depends(require_role(["provider", "admin"]))
 ):
     """
     Search Epic FHIR patients by ID or name.
-    Pass Bearer token in Authorization header.
+    Requires:
+      - Epic-Authorization: Bearer <Epic Access Token>
+      - Local user with provider or admin role
     """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    access_token = authorization.split(" ")[1]
+    if not epic_token.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Epic-Authorization header")
+
+    access_token = epic_token.split(" ")[1]
 
     base_url = f"{EPIC_FHIR_BASE_URL}/Patient"
     headers = {
@@ -97,20 +100,22 @@ async def search_patients(
 
     return response.json()
 
-
-# FIXED: Added route to get single patient by ID
 @router.get("/epic/patient/{patient_id}")
 async def get_patient_by_id(
-    patient_id: str, 
-    authorization: str = Header(None),
+    patient_id: str,
+    epic_token: str = Header(..., alias="Epic-Authorization"),
     current_user: dict = Depends(require_role(["provider", "admin"]))
 ):
     """
     Get a specific patient by ID.
+    Requires:
+      - Epic-Authorization: Bearer <Epic Access Token>
+      - Local user with provider or admin role
     """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    access_token = authorization.split(" ")[1]
+    if not epic_token.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Epic-Authorization header")
+
+    access_token = epic_token.split(" ")[1]
 
     url = f"{EPIC_FHIR_BASE_URL}/Patient/{patient_id}"
     headers = {
@@ -128,6 +133,7 @@ async def get_patient_by_id(
         )
 
     return response.json()
+
 
 
 # FIXED: Changed to DocumentReference instead of DiagnosticReport
