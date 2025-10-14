@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from './ProtectedRoutes';
 
 // Import your components
 import Navbar from './Navbar';
@@ -12,6 +11,7 @@ import EpicSearch from './EpicSearch';
 import CernerSearch from '.CernerSearch';
 import EpicDetails from './EpicDetails';
 import CernerDetails from './CernerDetails';
+import ProtectedRoute from './ProtectedRoutes';
 
 // ==================== Protected Layout ====================
 const ProtectedLayout = ({ children }) => (

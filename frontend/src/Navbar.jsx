@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { logout, getUserRoles, hasRole } from '../api/axiosConfig';
+import { logout, getUserRoles, hasRole } from './axiosConfig';
 
 const Navbar = () => {
   const navigate = useNavigate();
