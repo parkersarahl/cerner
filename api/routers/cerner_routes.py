@@ -27,7 +27,7 @@ CERNER_CLIENT_ID = "5926dd25-fd35-4807-8273-5aaf77360167"
 CERNER_CLIENT_SECRET = "MoSCsvLuwWAatHS70vVkyM9C8SmPjUvW"
 CERNER_TENANT_ID = "ec2458f2-1e24-41c8-b71b-0e701af7583d"
 # Define SMART scopes for Cerner
-CERNER_SCOPES = "openid fhirUser offline_access user/Patient.read user/Observation.read user/Practitioner.read"
+CERNER_SCOPES = "openid fhirUser offline_access user/Patient.read user/Observation.read user/Practitioner.read user/DiagnosticReport.read user/DocumentReference.read"
 
 # Simple in-memory state store (replace with redis/db in production)
 STATE_STORE = {}
