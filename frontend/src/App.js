@@ -8,7 +8,7 @@ import FrontPage from './FrontPage';
 import EpicLogin from './EpicLogin';
 import CernerLogin from './CernerLogin';
 import EpicSearch from './EpicSearch';
-import CernerSearch from '.CernerSearch';
+import CernerSearch from './CernerSearch';
 import EpicDetails from './EpicDetails';
 import CernerDetails from './CernerDetails';
 import ProtectedRoute from './ProtectedRoutes';
