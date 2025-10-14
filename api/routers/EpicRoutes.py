@@ -5,7 +5,6 @@ from fastapi.responses import RedirectResponse, StreamingResponse
 import httpx
 import urllib.parse
 import secrets
-import base
 #from sqlalchemy.orm import Session  
 from routers.epicBase import EpicEHR
 
