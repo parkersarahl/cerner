@@ -146,7 +146,7 @@ const EpicSearch = () => {
             className="border p-2 rounded shadow hover:bg-gray-100 cursor-pointer"
             onClick={() => {
               localStorage.setItem('searchSource', 'epic');
-              navigate(`/epic/patients/${patient.id}`);
+              navigate(`/epic/patient/${patient.id}`);
             }}
           >
             <span className="text-blue-600 hover:underline">{patient.name}</span>
