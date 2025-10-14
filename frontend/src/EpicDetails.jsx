@@ -121,6 +121,11 @@ const EpicPatientDetails = () => {
       binaryId = parts[parts.length - 1];
     }
 
+      // Remove "Binary/" prefix if it exists (Epic sometimes includes this)
+    if (binaryId.startsWith("Binary/")) {
+      binaryId = binaryId.replace("Binary/", "");
+    }
+
     // Build final URL
     const finalUrl = isAbsoluteUrl 
       ? url 
