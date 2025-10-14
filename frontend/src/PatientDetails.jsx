@@ -15,39 +15,37 @@ const PatientDetail = () => {
   const [ehrSource, setEhrSource] = useState(null); // epic or cerner
 
   useEffect(() => {
-    // Read selected EHR from localStorage
     const storedEhr = localStorage.getItem("ehrSource");
+    if (!storedEhr) {
+      setError("No EHR selected. Please choose Epic or Cerner.");
+      setIsLoading(false);
+      return;
+    }
     setEhrSource(storedEhr);
-  }, []);
-
-  useEffect(() => {
-    if (!ehrSource) return; // wait until we know which EHR
 
     const fetchResources = async () => {
       setIsLoading(true);
+      setError("");
       try {
-        setError("");
         const token = localStorage.getItem("token");
+        if (!token) throw new Error("Missing auth token");
 
-        const config = {
-          headers: { Authorization: `Bearer ${token}` },
-        };
+        const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        // Fetch the resources dynamically based on the selected EHR
         const [radiologyRes, labRes, notesRes, patientRes] = await Promise.all([
           axios.get(
-            `${REACT_APP_API_URL}/${ehrSource}/diagnostic-reports/radiology?patient=${patientId}`,
+            `${REACT_APP_API_URL}/${storedEhr}/diagnostic-reports/radiology?patient=${patientId}`,
             config
           ),
           axios.get(
-            `${REACT_APP_API_URL}/${ehrSource}/diagnostic-reports/labs?patient=${patientId}`,
+            `${REACT_APP_API_URL}/${storedEhr}/diagnostic-reports/labs?patient=${patientId}`,
             config
           ),
           axios.get(
-            `${REACT_APP_API_URL}/${ehrSource}/diagnostic-reports/clinical?patient=${patientId}`,
+            `${REACT_APP_API_URL}/${storedEhr}/diagnostic-reports/clinical?patient=${patientId}`,
             config
           ),
-          axios.get(`${REACT_APP_API_URL}/${ehrSource}/patient/${patientId}`, config),
+          axios.get(`${REACT_APP_API_URL}/${storedEhr}/patient/${patientId}`, config),
         ]);
 
         const getResources = (bundle) => bundle?.entry?.map((e) => e.resource) || [];
@@ -57,7 +55,7 @@ const PatientDetail = () => {
         setLabReports(getResources(labRes.data));
         setPatient(patientRes.data);
       } catch (err) {
-        setError(`Failed to load patient resources from ${ehrSource}.`);
+        setError(`Failed to load patient resources from ${storedEhr}.`);
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -65,7 +63,7 @@ const PatientDetail = () => {
     };
 
     fetchResources();
-  }, [patientId, ehrSource]);
+  }, [patientId]);
 
   const ALLOWED_ACCEPTS = [
     "application/pdf",
@@ -87,7 +85,6 @@ const PatientDetail = () => {
     }
 
     let attachment = report.content?.[0]?.attachment || report.presentedForm?.[0];
-
     if (!attachment || !attachment.url) {
       setError("No report file URL available for this resource.");
       return;
@@ -118,9 +115,10 @@ const PatientDetail = () => {
 
   const logResourceView = async (patientId, resourceId, resourceType, action) => {
     try {
+      const token = localStorage.getItem("token");
       await axios.post(`${REACT_APP_API_URL}/${ehrSource}/audit/log-view`, null, {
         params: { patient_id: patientId, resource_id: resourceId, resource_type: resourceType, action },
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {
       console.error(`${ehrSource} audit log failed:`, err);
@@ -137,7 +135,7 @@ const PatientDetail = () => {
         <button
           onClick={() => {
             handleResourceClick(item);
-            logResourceView(item.id, item.id, type, "viewed resource");
+            logResourceView(patientId, item.id, type, "viewed resource");
           }}
           className="text-blue-600 hover:underline focus:outline-none"
         >

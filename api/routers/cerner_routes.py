@@ -121,25 +121,6 @@ async def search_patients(
         )
     return response.json()
 
-@router.get("/practitioner/{practitioner_id}")
-async def get_practitioner(practitioner_id: str, access_token: str):
-    """Fetch a Practitioner resource"""
-    fhir_url = f"https://fhir-ehr.cerner.com/r4/{CERNER_TENANT_ID}/Practitioner/{practitioner_id}"
-    headers = {
-        "Accept": "application/fhir+json",
-        "Authorization": f"Bearer {access_token}"
-    }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(fhir_url, headers=headers)
-
-    if response.status_code != 200:
-        raise HTTPException(
-            status_code=response.status_code,
-            detail=f"Failed to fetch practitioner: {response.text}"
-        )
-
-    return response.json()
 
 @router.get("/patient/{patient_id}")
 async def get_patient_by_id(patient_id: str, authorization: str = Header(None)):
