@@ -13,17 +13,17 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 # Fake user database
 fake_users_db = {
-    "provider@example.com": {
+    "provider": {
         "id": "user-001",
-        "username": "provider@example.com",
-        "hashed_password": pwd_context.hash("securepassword"),
+        "username": "provider",
+        "hashed_password": pwd_context.hash("provider"),
         "role": "provider"
     },
-    "username@example.com": {
+    "admin": {
         "id": "user-002",
-        "username": "username@example.com",
-        "hashed_password": pwd_context.hash("securepassword2"),
-        "role": "guest"
+        "username": "admin",
+        "hashed_password": pwd_context.hash("admin"),
+        "role": "admin"
     }
 }
 

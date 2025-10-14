@@ -1,11 +1,13 @@
 import base64
 import io
-from fastapi import APIRouter, Path, Request, HTTPException, Query, Header, Response
+from fastapi import APIRouter, Path, Request, HTTPException, Query, Header, Response, Depends
 from fastapi.responses import RedirectResponse, StreamingResponse
 import httpx
 import urllib.parse
 import secrets
 from routers.epicBase import EpicEHR
+from utils.auth import get_current_user, require_role
+from typing import List
 
 EPIC_CLIENT_ID = "b3d4de6f-fff6-45cb-ad65-eff1c502c2c1"
 EPIC_REDIRECT_URI = "https://cerner.onrender.com/epic/callback"
@@ -61,7 +63,8 @@ async def epic_callback(request: Request):
 async def search_patients(
     patient_id: str = Query(None, description="FHIR Patient ID (use _id for exact match)"),
     name: str = Query(None, description="Patient name (optional)"),
-    authorization: str = Header(None)
+    authorization: str = Header(None),
+    current_user: dict = Depends(require_role(["provider"],["admin"]))
 ):
     """
     Search Epic FHIR patients by ID or name.
@@ -97,7 +100,11 @@ async def search_patients(
 
 # FIXED: Added route to get single patient by ID
 @router.get("/epic/patient/{patient_id}")
-async def get_patient_by_id(patient_id: str, authorization: str = Header(None)):
+async def get_patient_by_id(
+    patient_id: str, 
+    authorization: str = Header(None),
+    current_user: dict = Depends(require_role(["provider"],["admin"]))
+):
     """
     Get a specific patient by ID.
     """
@@ -128,7 +135,8 @@ async def get_patient_by_id(patient_id: str, authorization: str = Header(None)):
 async def get_epic_document_references(
     patientId: str = Query(..., description="Patient ID"),
     type: str = Query(..., description="Document type: radiology, lab, or clinical"),
-    authorization: str = Header(None)
+    authorization: str = Header(None),
+    current_user: dict = Depends(require_role(["provider"]))
 ):
     """
     Fetch DocumentReference resources from Epic FHIR API.
@@ -172,9 +180,10 @@ async def get_epic_document_references(
 # Keep this for backwards compatibility if you need DiagnosticReport
 @router.get("/epic/diagnostic-reports/{report_type}")
 async def get_epic_diagnostic_reports(
-    report_type: str, 
-    patient: str, 
-    authorization: str = Header(None)
+    report_type: str,
+    patient: str,
+    authorization: str = Header(None),
+    current_user: dict = Depends(require_role(["provider"]))
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
@@ -209,7 +218,11 @@ async def get_epic_diagnostic_reports(
 
 # FIXED: Try Epic's open endpoint for Binary resources
 @router.get("/epic/binary/{binary_id}")
-async def get_epic_binary(binary_id: str, authorization: str = Header(None)):
+async def get_epic_binary(
+    binary_id: str,
+    authorization: str = Header(None),
+    current_user: dict = Depends(require_role(["provider"]))
+):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     access_token = authorization.split(" ")[1]
