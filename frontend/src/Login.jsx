@@ -25,7 +25,7 @@ const Login = () => {
     setLoading(true);
     try {
       const response = await axios.post(`${REACT_APP_API_URL}/auth/login`, {
-        username: email,
+        username: email.split('@')[0], // so 'provider@provider.com' → 'provider'
         password,
       });
 
