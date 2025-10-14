@@ -10,6 +10,7 @@ import CernerLogin from './CernerLogin';
 import Login from './Login';
 import Navbar from './Navbar';
 import './index.css';
+import ProtectedRoute from './ProtectedRoutes';
 
 const ProtectedLayout = ({ children }) => (
   <>
@@ -26,13 +27,65 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<Login/>} />
           <Route path="/login" element={<Login />} />
-          <Route path="/frontpage" element={<FrontPage />} />
-          <Route path="/epic/login" element={<EpicLogin />} />
-          <Route path="/cerner/login" element={<CernerLogin />} />
-          <Route path="/search/epic" element={<EpicSearch /> } />
-          <Route path="/search/cerner" element={<CernerSearch /> } />
-          <Route path="/epic/patient/:patientId" element={<EpicDetails /> } />
-          <Route path="/cerner/patient/:patientId" element={<CernerDetails /> } />
+                  {/* Protected Routes */}
+          <Route
+            path="/frontpage"
+            element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <FrontPage />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/epic/login"
+            element={
+              <ProtectedRoute>
+                <EpicLogin />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cerner/login"
+            element={
+              <ProtectedRoute>
+                <CernerLogin />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/search/epic"
+            element={
+              <ProtectedRoute>
+                <EpicSearch />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/search/cerner"
+            element={
+              <ProtectedRoute>
+                <CernerSearch />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/epic/patient/:patientId"
+            element={
+              <ProtectedRoute>
+                <EpicDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cerner/patient/:patientId"
+            element={
+              <ProtectedRoute>
+                <CernerDetails />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Router>
     </div>
