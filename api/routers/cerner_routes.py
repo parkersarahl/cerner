@@ -141,6 +141,22 @@ async def get_practitioner(practitioner_id: str, access_token: str):
 
     return response.json()
 
+@router.get("/patient/{patient_id}")
+async def get_patient_by_id(patient_id: str, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    access_token = authorization.split(" ")[1]
+
+    url = f"https://fhir-ehr.cerner.com/r4/{CERNER_TENANT_ID}/Patient/{patient_id}"
+    headers = {"Accept": "application/fhir+json", "Authorization": f"Bearer {access_token}"}
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, headers=headers)
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=f"Patient {patient_id} not found")
+
+    return response.json()
 
 @router.get("/observations/{patient_id}")
 async def get_observations(patient_id: str, access_token: str):
