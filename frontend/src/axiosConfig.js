@@ -89,6 +89,29 @@ export const hasRole = (role) => {
 };
 
 /**
+ * Get Epic token from sessionStorage
+ * @returns {string|null} Epic token or null
+ */
+export const getEpicToken = () => {
+  return sessionStorage.getItem('epicToken');
+};
+
+/**
+ * Store Epic token in sessionStorage
+ * @param {string} token - Epic OAuth token
+ */
+export const setEpicToken = (token) => {
+  sessionStorage.setItem('epicToken', token);
+};
+
+/**
+ * Remove Epic token from sessionStorage
+ */
+export const clearEpicToken = () => {
+  sessionStorage.removeItem('epicToken');
+};
+
+/**
  * Check if user is authenticated
  * @returns {boolean}
  */
