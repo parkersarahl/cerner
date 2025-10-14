@@ -48,10 +48,10 @@ const EpicPatientDetails = () => {
 
         // Fetch all resources in parallel
         const [patientRes, radiologyRes, labRes, notesRes] = await Promise.all([
-          axios.get(`${baseUrl}/api/epic/patient/${patientId}`, { headers }),
-          axios.get(`${baseUrl}/api/epic/documentReferences?patientId=${patientId}&type=radiology`, { headers }),
-          axios.get(`${baseUrl}/api/epic/documentReferences?patientId=${patientId}&type=lab`, { headers }),
-          axios.get(`${baseUrl}/api/epic/documentReferences?patientId=${patientId}&type=clinical`, { headers })
+          axios.get(`${baseUrl}/epic/patient/${patientId}`, { headers }),
+          axios.get(`${baseUrl}/epic/documentReferences?patientId=${patientId}&type=radiology`, { headers }),
+          axios.get(`${baseUrl}/epic/documentReferences?patientId=${patientId}&type=lab`, { headers }),
+          axios.get(`${baseUrl}/epic/documentReferences?patientId=${patientId}&type=clinical`, { headers })
         ]);
 
         console.log("Patient Response:", patientRes.data);
@@ -231,7 +231,7 @@ const EpicPatientDetails = () => {
   const logResourceView = async (patientId, resourceId, resourceType, action) => {
     try {
       const baseUrl = process.env.REACT_APP_API_URL;
-      await axios.post(`${baseUrl}/api/epic/audit/log-view`, null, {
+      await axios.post(`${baseUrl}/epic/audit/log-view`, null, {
         params: {
           patient_id: patientId,
           resource_id: resourceId,
