@@ -31,16 +31,29 @@ class LoginInput(BaseModel):
     username: str
     password: str
 
+
+
 @router.post("/auth/login")
 def login(input: LoginInput):
+    # Try direct key lookup first
     user = fake_users_db.get(input.username)
+    
+    # If not found, try lookup by email
+    if not user:
+        user = next(
+            (u for u in fake_users_db.values() if u["username"] == input.username),
+            None
+        )
+
+    # Verify user and password
     if not user or not pwd_context.verify(input.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    # Create JWT
     token_data = {
-        "sub": input.username,
+        "sub": user["username"],
         "roles": [user["role"]],
-        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     }
 
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
