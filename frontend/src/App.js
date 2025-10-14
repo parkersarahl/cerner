@@ -1,13 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import FrontPage from './FrontPage';
-import PatientSearch from './PatientSearch';
+import CernerSearch from './CernerSearch';
 import EpicSearch from './EpicSearch';
-import PatientDetails from './PatientDetails';
+import CernerDetails from './CernerDetails';
 import EpicLogin from './EpicLogin';
+import EpicDetails from './EpicDetails';
 import CernerLogin from './CernerLogin';
 import Login from './Login';
-import ProtectedRoute from './ProtectedRoutes';
 import Navbar from './Navbar';
 import './index.css';
 
@@ -29,10 +29,10 @@ function App() {
           <Route path="/frontpage" element={<FrontPage />} />
           <Route path="/epic/login" element={<EpicLogin />} />
           <Route path="/cerner/login" element={<CernerLogin />} />
-          <Route path="/search/epic" element={<EpicSearch /> } />
-          <Route path="/search/cerner" element={<PatientSearch /> } />
-          <Route path="/epic/patient/:patientId" element={<PatientDetails /> } />
-          <Route path="/cerner/patient/:patientId" element={<PatientDetails /> } />
+          <Route path="/epic/search" element={<EpicSearch /> } />
+          <Route path="/cerner/search" element={<CernerSearch /> } />
+          <Route path="/epic/patient/:patientId" element={<EpicDetails /> } />
+          <Route path="/cerner/patient/:patientId" element={<CernerDetails /> } />
         </Routes>
       </Router>
     </div>
