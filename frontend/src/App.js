@@ -24,8 +24,9 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<FrontPage />} />
+          <Route path="/" element={<Login/>} />
           <Route path="/login" element={<Login />} />
+          <Route path="/frontpage" element={<FrontPage />} />
           <Route path="/epic/login" element={<EpicLogin />} />
           <Route path="/cerner/login" element={<CernerLogin />} />
           <Route path="/search/epic" element={<EpicSearch /> } />
