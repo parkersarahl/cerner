@@ -1,17 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const EpicPatientDetails = () => {
+const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+const EpicDetails = () => {
   const { patientId } = useParams();
   const navigate = useNavigate();
-
+  
+  const [radiologyReports, setRadiologyReports] = useState([]);
+  const [clinicalNotes, setClinicalNotes] = useState([]);
+  const [labReports, setLabReports] = useState([]);
   const [patient, setPatient] = useState(null);
-  const [radiology, setRadiology] = useState([]);
-  const [labs, setLabs] = useState([]);
-  const [notes, setNotes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const ALLOWED_ACCEPTS = [
     'application/pdf',
@@ -27,112 +29,141 @@ const EpicPatientDetails = () => {
   ];
 
   useEffect(() => {
-    const fetchPatientData = async () => {
+    const fetchResources = async () => {
+      setIsLoading(true);
       try {
-        const token = localStorage.getItem("epic_token"); // FIXED: Use epic_token instead of token
-
-        console.log("Epic Patient Details - Patient ID:", patientId);
-        console.log("Token exists:", !!token);
+        setError('');
+        const token = localStorage.getItem('epic_token');
 
         if (!token) {
-          console.error("Missing Epic token — redirecting...");
+          console.error("Missing Epic token");
           navigate("/epic/login", { replace: true });
           return;
         }
 
-        const headers = { Authorization: `Bearer ${token}` };
-        const baseUrl = process.env.REACT_APP_API_URL;
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
 
-        console.log("Making requests with token:", token ? "Token exists" : "No token");
-        console.log("Base URL:", baseUrl);
-
-        // Fetch all resources in parallel
-        const [patientRes, radiologyRes, labRes, notesRes] = await Promise.all([
-          axios.get(`${baseUrl}/epic/patient/${patientId}`, { headers }),
-          axios.get(`${baseUrl}/epic/documentReferences?patientId=${patientId}&type=radiology`, { headers }),
-          axios.get(`${baseUrl}/epic/documentReferences?patientId=${patientId}&type=lab`, { headers }),
-          axios.get(`${baseUrl}/epic/documentReferences?patientId=${patientId}&type=clinical`, { headers })
+        const [radiologyRes, labRes, notesRes, patientRes] = await Promise.all([
+          axios.get(`${REACT_APP_API_URL}/epic/documentReferences?patientId=${patientId}&type=radiology`, config),
+          axios.get(`${REACT_APP_API_URL}/epic/documentReferences?patientId=${patientId}&type=lab`, config),
+          axios.get(`${REACT_APP_API_URL}/epic/documentReferences?patientId=${patientId}&type=clinical`, config),
+          axios.get(`${REACT_APP_API_URL}/epic/patient/${patientId}`, config),
         ]);
 
-        console.log("Patient Response:", patientRes.data);
-        console.log("Radiology Response:", radiologyRes.data);
-        console.log("Lab Response:", labRes.data);
-        console.log("Notes Response:", notesRes.data);
-
-        // Extract resources from bundle
         const getResources = (bundle) => bundle?.entry?.map((e) => e.resource) || [];
 
+        setClinicalNotes(getResources(notesRes.data));
+        setRadiologyReports(getResources(radiologyRes.data));
+        setLabReports(getResources(labRes.data));
         setPatient(patientRes.data);
-        setRadiology(getResources(radiologyRes.data));
-        setLabs(getResources(labRes.data));
-        setNotes(getResources(notesRes.data));
-
-        setLoading(false);
       } catch (err) {
-        console.error("Error fetching Epic patient details:", err);
-        setError("Failed to load patient data. Please try again.");
-        setLoading(false);
+        setError('Failed to load patient resources');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchPatientData();
+    fetchResources();
   }, [patientId, navigate]);
 
-  const handleResourceClick = async (resource) => {
-    if (!resource) {
+  const handleResourceClick = async (report) => {
+    console.log("=== CLICKED RESOURCE ===");
+    console.log("Full resource:", JSON.stringify(report, null, 2));
+    
+    if (!report) {
       setError("No report data available for this item.");
       return;
     }
 
     let attachment = null;
 
-    // Check for DocumentReference content or DiagnosticReport presentedForm
-    if (resource.content && resource.content.length > 0) {
-      attachment = resource.content[0].attachment;
-    } else if (resource.presentedForm && resource.presentedForm.length > 0) {
-      attachment = resource.presentedForm[0];
+    if (report.content && report.content.length > 0) {
+      attachment = report.content[0].attachment;
+      console.log("Found attachment in content[0]");
+    } else if (report.presentedForm && report.presentedForm.length > 0) {
+      attachment = report.presentedForm[0];
+      console.log("Found attachment in presentedForm[0]");
     }
 
     if (!attachment) {
+      console.error("No attachment found!");
+      alert(`No attachment found in resource.\n\nAvailable fields: ${Object.keys(report).join(', ')}`);
       setError("No report file available for this resource.");
       return;
     }
 
+    console.log("Attachment:", attachment);
+    console.log("Has 'data' field?", !!attachment.data);
+    console.log("Has 'url' field?", !!attachment.url);
+
+    // CHECK FOR INLINE BASE64 DATA FIRST
+    if (attachment.data) {
+      console.log("✅ Found inline base64 data! Length:", attachment.data.length);
+      try {
+        const contentType = attachment.contentType || "application/pdf";
+        const base64Data = attachment.data;
+        
+        // Decode base64 to binary
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: contentType });
+        const blobUrl = URL.createObjectURL(blob);
+        
+        console.log("✅ Successfully created blob from inline data");
+        window.open(blobUrl, "_blank");
+        return;
+      } catch (err) {
+        console.error("❌ Error decoding inline base64 data:", err);
+        setError("Failed to decode document content.");
+        return;
+      }
+    }
+
+    // IF NO INLINE DATA, TRY FETCHING FROM URL
     let url = attachment.url;
     let contentType = attachment.contentType || "application/pdf";
-
+    
     if (!url) {
+      console.error("No URL found in attachment");
       setError("No report file URL available for this resource.");
       return;
     }
 
-    // Validate content type
+    console.log("Attempting to fetch from URL:", url);
+
     if (!ALLOWED_ACCEPTS.includes(contentType)) {
       contentType = "application/pdf";
     }
 
-    const baseUrl = process.env.REACT_APP_API_URL;
     const isAbsoluteUrl = url.startsWith("http://") || url.startsWith("https://");
 
-    // Extract binary ID from URL if needed
     let binaryId = url;
     if (isAbsoluteUrl) {
       const parts = url.split("/");
       binaryId = parts[parts.length - 1];
     }
 
-    // Remove "Binary/" prefix if it exists (Epic sometimes includes this)
     if (binaryId.startsWith("Binary/")) {
       binaryId = binaryId.replace("Binary/", "");
     }
 
-    // Build final URL
     const finalUrl = isAbsoluteUrl 
       ? url 
-      : `${baseUrl}/epic/binary/${binaryId}`;
+      : `${REACT_APP_API_URL}/epic/binary/${binaryId}`;
+
+    console.log("Final URL:", finalUrl);
 
     try {
-      const token = localStorage.getItem("epic_token"); // FIXED: Use epic_token
+      const token = localStorage.getItem("epic_token");
       const response = await axios.get(finalUrl, {
         responseType: "blob",
         headers: {
@@ -141,142 +172,40 @@ const EpicPatientDetails = () => {
         },
       });
 
-      // Check actual content type from response
-      const actualContentType = response.headers['content-type'] || contentType;
-      console.log("Content type:", actualContentType);
-      console.log("Response size:", response.data.size);
-
-      // For text-based content, convert to readable format
-      if (actualContentType.includes('text/plain') || 
-          actualContentType.includes('text/html') ||
-          (response.data.size < 10000 && actualContentType.includes('octet-stream'))) {
-        
-        // Read the blob as text
-        const text = await response.data.text();
-        
-        // Create a formatted HTML page
-        const htmlContent = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <title>Clinical Document</title>
-            <style>
-              body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                max-width: 900px;
-                margin: 40px auto;
-                padding: 20px;
-                line-height: 1.6;
-                background-color: #f5f5f5;
-              }
-              .report-container {
-                background: white;
-                padding: 30px;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-              }
-              h1 {
-                color: #2c3e50;
-                border-bottom: 3px solid #27ae60;
-                padding-bottom: 10px;
-                margin-bottom: 20px;
-              }
-              .report-content {
-                white-space: pre-wrap;
-                font-family: 'Courier New', monospace;
-                background-color: #f8f9fa;
-                padding: 20px;
-                border-radius: 4px;
-                border-left: 4px solid #27ae60;
-                font-size: 14px;
-              }
-              .metadata {
-                color: #7f8c8d;
-                font-size: 0.9em;
-                margin-top: 20px;
-                padding-top: 20px;
-                border-top: 1px solid #ecf0f1;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="report-container">
-              <h1>Clinical Document</h1>
-              <div class="report-content">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-              <div class="metadata">
-                <p><strong>Content Type:</strong> ${actualContentType}</p>
-                <p><strong>Size:</strong> ${response.data.size} bytes</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `;
-        
-        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
-        const blobUrl = URL.createObjectURL(htmlBlob);
-        window.open(blobUrl, "_blank");
-      } else {
-        // For PDFs and other binary content, open directly
-        const blob = new Blob([response.data], { type: actualContentType });
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, "_blank");
-      }
+      const blob = new Blob([response.data], { type: contentType });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank");
     } catch (err) {
-      setError(`Failed to open report file: ${err.response?.status || err.message}`);
-      console.error("Binary fetch error:", err);
+      console.error("❌ Binary fetch failed:", err);
+      
+      const errorMsg = err.response?.status === 403 
+        ? "⚠️ Epic's sandbox restricts access to Binary resources. This is a known limitation - the document reference exists but Epic won't let us retrieve the actual file in the test environment."
+        : `Failed to open report file: ${err.response?.status || err.message}`;
+      
+      setError(errorMsg);
+      alert(`Could not open document\n\n${errorMsg}\n\nDocument info:\n- Title: ${attachment.title || 'N/A'}\n- Type: ${attachment.contentType || 'N/A'}`);
     }
   };
 
-  const logResourceView = async (patientId, resourceId, resourceType, action) => {
-    try {
-      const baseUrl = process.env.REACT_APP_API_URL;
-      await axios.post(`${baseUrl}/epic/audit/log-view`, null, {
-        params: {
-          patient_id: patientId,
-          resource_id: resourceId,
-          resource_type: resourceType,
-          action: action,
-        },
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("epic_token")}`, // FIXED: Use epic_token
-        },
-      });
-    } catch (err) {
-      console.error("Audit log failed:", err);
-    }
-  };
+  const renderItem = (item, type) => {
+    const id = item.id;
+    if (!id) return null;
 
-  const renderResourceItem = (resource, type) => {
-    if (!resource || !resource.id) return null;
-
-    const id = resource.id;
-    const label = 
-      resource.type?.text ||
-      resource.type?.coding?.[0]?.display ||
-      resource.code?.text ||
-      resource.title ||
+    const label =
+      item.type?.text ||
+      item.type?.coding?.[0]?.display ||
+      item.title ||
       `${type} resource`;
 
-    const date = resource.date || resource.issued || resource.effectiveDateTime;
-    const formattedDate = date 
+    const date = item.date || item.issued;
+    const formattedDate = date
       ? new Date(date).toLocaleDateString('en-US')
       : '';
 
     return (
       <li key={`${type}-${id}`} className="my-1">
         <button
-          onClick={() => {
-            handleResourceClick(resource);
-            logResourceView(
-              patientId,
-              id,
-              type === 'Radiology Report' || type === 'Lab Report' || type === 'Clinical Notes' 
-                ? 'DocumentReference' 
-                : type,
-              "viewed resource"
-            );
-          }}
+          onClick={() => handleResourceClick(item)}
           className="text-blue-600 hover:underline focus:outline-none"
         >
           {label} {formattedDate && `(${formattedDate})`}
@@ -285,35 +214,19 @@ const EpicPatientDetails = () => {
     );
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-green-500"></div>
-        <p className="ml-4 text-gray-600 text-lg">Loading patient data...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-10 text-center">
-        <div className="text-red-600 mb-4">{error}</div>
-        <button
-          onClick={() => navigate(-1)}
-          className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-        >
-          Go Back
-        </button>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-green-500 border-solid"></div>
+        <p className="text-gray-600 text-lg ml-4">Loading patient data...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">
-          Epic Patient Details
-        </h1>
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Epic Patient Details</h2>
         <button
           onClick={() => navigate(-1)}
           className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
@@ -321,74 +234,42 @@ const EpicPatientDetails = () => {
           Back
         </button>
       </div>
-
-      {/* Patient Demographics */}
+      
       {patient && (
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Patient Information</h2>
-          <div className="space-y-2">
-            <p className="text-gray-800">
-              <strong>Name:</strong>{' '}
-              {patient.name?.[0]?.text || 
-               `${patient.name?.[0]?.given?.join(' ')} ${patient.name?.[0]?.family}` || 
-               'N/A'}
-            </p>
-            <p className="text-gray-800">
-              <strong>Gender:</strong> {patient.gender || 'N/A'}
-            </p>
-            <p className="text-gray-800">
-              <strong>Birth Date:</strong>{' '}
-              {patient.birthDate 
-                ? new Date(patient.birthDate).toLocaleDateString('en-US')
-                : 'N/A'}
-            </p>
-            <p className="text-gray-800">
-              <strong>ID:</strong> {patient.id || 'N/A'}
-            </p>
-          </div>
+        <div className="mb-4">
+          <p className="text-lg">
+            <strong>Name:</strong> {patient.name?.[0]?.given?.join(' ')} {patient.name?.[0]?.family}
+          </p>
+          <p className="text-lg">
+            <strong>Date of Birth:</strong> {new Date(patient.birthDate).toLocaleDateString('en-US')}
+          </p>
         </div>
       )}
-
-      {/* Display error message if any */}
+      
       {error && <p className="text-red-600 mb-4">{error}</p>}
 
-      {/* Radiology Reports */}
-      <section className="bg-white shadow rounded-lg p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-3">Radiology Reports</h3>
-        {radiology.length > 0 ? (
-          <ul className="list-disc ml-6">
-            {radiology.map((resource) => renderResourceItem(resource, 'Radiology Report'))}
-          </ul>
-        ) : (
-          <p className="text-gray-500">No radiology reports found.</p>
-        )}
+      <section className="mb-6">
+        <h3 className="text-lg font-medium">Radiology Reports</h3>
+        <ul className="list-disc ml-6">
+          {radiologyReports.map((r) => renderItem(r, 'RadiologyReport'))}
+        </ul>
       </section>
 
-      {/* Lab Reports */}
-      <section className="bg-white shadow rounded-lg p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-3">Lab Reports</h3>
-        {labs.length > 0 ? (
-          <ul className="list-disc ml-6">
-            {labs.map((resource) => renderResourceItem(resource, 'Lab Report'))}
-          </ul>
-        ) : (
-          <p className="text-gray-500">No lab reports found.</p>
-        )}
+      <section className="mb-6">
+        <h3 className="text-lg font-medium">Lab Reports</h3>
+        <ul className="list-disc ml-6">
+          {labReports.map((r) => renderItem(r, 'LabReport'))}
+        </ul>
       </section>
-
-      {/* Clinical Notes */}
-      <section className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-3">Clinical Notes</h3>
-        {notes.length > 0 ? (
-          <ul className="list-disc ml-6">
-            {notes.map((resource) => renderResourceItem(resource, 'Clinical Notes'))}
-          </ul>
-        ) : (
-          <p className="text-gray-500">No clinical notes found.</p>
-        )}
+      
+      <section className="mb-6">
+        <h3 className="text-lg font-medium">Clinical Notes</h3>
+        <ul className="list-disc ml-6">
+          {clinicalNotes.map((r) => renderItem(r, 'ClinicalNote'))}
+        </ul>
       </section>
     </div>
   );
 };
 
-export default EpicPatientDetails;
+export default EpicDetails;
