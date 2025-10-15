@@ -5,8 +5,12 @@ from fastapi.responses import RedirectResponse, StreamingResponse
 import httpx
 import urllib.parse
 import secrets
+
+from requests import Session
+from api.database import get_db
 from routers.epicBase import EpicEHR
 from utils.auth import require_role, get_current_user
+from utils.audit_logger import log_audit_event
 
 EPIC_CLIENT_ID = "b3d4de6f-fff6-45cb-ad65-eff1c502c2c1"
 EPIC_REDIRECT_URI = "https://cerner.onrender.com/epic/callback"
@@ -73,7 +77,8 @@ async def search_patients(
     patient_id: str = Query(None, description="FHIR Patient ID"),
     name: str = Query(None, description="Patient name"),
     epic_token: str = Header(..., alias="Epic-Authorization"),
-    current_user: dict = Depends(require_role(["provider", "admin"]))
+    current_user: dict = Depends(require_role(["provider", "admin"])),
+    db: Session = Depends(get_db)
 ):
     """
     Search Epic FHIR patients.
@@ -91,8 +96,14 @@ async def search_patients(
     access_token = epic_token.split(" ")[1]
     
     # Log who accessed
-    username = current_user.get("sub", "unknown")
-    print(f"User '{username}' searching Epic patients")
+    log_audit_event(
+        db=db,
+        user_id=current_user.get("sub"),
+        action="searched patients",
+        resource_type="Patient",
+        resource_id=None
+    )
+
 
     base_url = f"{EPIC_FHIR_BASE_URL}/Patient"
     headers = {
