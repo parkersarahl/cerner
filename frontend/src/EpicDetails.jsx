@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
@@ -7,6 +7,7 @@ const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:800
 const EpicDetails = () => {
   const { patientId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [radiologyReports, setRadiologyReports] = useState([]);
   const [clinicalNotes, setClinicalNotes] = useState([]);
@@ -33,13 +34,22 @@ const EpicDetails = () => {
       setIsLoading(true);
       try {
         setError('');
-        const token = localStorage.getItem('epic_token');
+        const epicToken = location.state?.epicToken || sessionStorage.getItem('epic_token');
         const jwtToken = localStorage.getItem('token');
 
-        if (!token) {
+        console.log('=== EPIC DETAILS - TOKEN CHECK ===');
+        console.log('Epic token from navigation state:', !!location.state?.epicToken);
+        console.log('Epic token from sessionStorage:', !!sessionStorage.getItem('epic_token'));
+        console.log('Epic token exists:', !!epicToken);
+        console.log('JWT token exists:', !!jwtToken);
+
+        if (!epicToken) {
           console.error("Missing Epic token");
           navigate("/epic/login", { replace: true });
           return;
+        }
+        if (!sessionStorage.getItem('epic_token') && epicToken) {
+          sessionStorage.setItem('epic_token', epicToken);
         }
 
         const config = {

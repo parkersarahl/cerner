@@ -13,17 +13,17 @@ const EpicSearch = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-useEffect(() => {
-  const urlToken = searchParams.get('token');
-  if (urlToken) {
-    setToken(urlToken);
-    sessionStorage.setItem('epic_token', urlToken);  // Changed from localStorage
-    window.history.replaceState({}, document.title, window.location.pathname);
-  } else {
-    const storedToken = sessionStorage.getItem('epic_token');  // Changed from localStorage
-    if (storedToken) setToken(storedToken);
-  }
-}, [searchParams]);
+  useEffect(() => {
+    const urlToken = searchParams.get('token');
+    if (urlToken) {
+      setToken(urlToken);
+      sessionStorage.setItem('epic_token', urlToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      const storedToken = sessionStorage.getItem('epic_token');
+      if (storedToken) setToken(storedToken);
+    }
+  }, [searchParams]);
 
   const handleLogin = () => {
     window.location.href = `${REACT_APP_API_URL}/epic/login`;
@@ -47,14 +47,15 @@ useEffect(() => {
       const url = `${REACT_APP_API_URL}/epic/patient`;
       const jwtToken = localStorage.getItem('token');
       const config = {
-        headers: { 'Authorization': `Bearer ${jwtToken}`,
-                  'Epic-Authorization': `Bearer ${token}` },
-        params: { patient_id: patientId.trim() }, // only search by ID
+        headers: { 
+          'Authorization': `Bearer ${jwtToken}`,
+          'Epic-Authorization': `Bearer ${token}` 
+        },
+        params: { patient_id: patientId.trim() },
       };
 
       const response = await axios.get(url, config);
 
-      // Print full FHIR bundle as JSON for debugging
       console.log('FHIR Bundle:', JSON.stringify(response.data, null, 2));
 
       const epicPatients = response.data.entry || [];
@@ -98,6 +99,25 @@ useEffect(() => {
   const onSubmit = (e) => {
     e.preventDefault();
     handleSearch();
+  };
+
+  const handlePatientClick = (patient) => {
+    console.log('=== NAVIGATING TO PATIENT ===');
+    const epicToken = sessionStorage.getItem('epic_token');
+    console.log('Epic token exists:', !!epicToken);
+    console.log('Token preview:', epicToken?.substring(0, 30));
+    
+    if (!epicToken) {
+      console.error('❌ No Epic token found before navigation!');
+      setError('Epic session lost. Please log in again.');
+      return;
+    }
+    
+    console.log('✅ Token verified, navigating with state...');
+    localStorage.setItem('searchSource', 'epic');
+    navigate(`/epic/patient/${patient.id}`, {
+      state: { epicToken }  // Pass token through navigation
+    });
   };
 
   return (
@@ -146,10 +166,7 @@ useEffect(() => {
           <li
             key={patient.id || index}
             className="border p-2 rounded shadow hover:bg-gray-100 cursor-pointer"
-            onClick={() => {
-              localStorage.setItem('searchSource', 'epic');
-              navigate(`/epic/patient/${patient.id}`);
-            }}
+            onClick={() => handlePatientClick(patient)}
           >
             <span className="text-blue-600 hover:underline">{patient.name}</span>
             <div className="text-sm text-gray-700">
