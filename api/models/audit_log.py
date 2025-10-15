@@ -1,7 +1,7 @@
 # models/audit_log.py
 from sqlalchemy import Column, Integer, String, DateTime, func
 from datetime import datetime
-from api.database import Base 
+from database import Base 
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
