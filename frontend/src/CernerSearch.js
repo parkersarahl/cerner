@@ -19,12 +19,12 @@ const PatientSearch = () => {
     if (urlToken) {
       console.log('Token received from OAuth callback');
       setToken(urlToken);
-      localStorage.setItem('cernerToken', urlToken);
+      sessionStorage.setItem('cernerToken', urlToken);
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } else {
       // Check for stored token
-      const storedToken = localStorage.getItem('cernerToken');
+      const storedToken = sessionStorage.getItem('cernerToken');
       if (storedToken) {
         console.log('Using stored token');
         setToken(storedToken);
@@ -42,9 +42,13 @@ const PatientSearch = () => {
 
     try {
       const url = `${REACT_APP_API_URL}/cerner/patient?name=${encodeURIComponent(name)}`;
-      const config = token 
-        ? { headers: { Authorization: `Bearer ${token}` } }
-        : {};
+      const jwtToken = localStorage.getItem('token');
+      const config = 
+         { headers: { 
+          'Authorization': `Bearer ${jwtToken}`,
+          'Cerner-Authorization': `Bearer ${token}`
+       } }
+      ;
 
       console.log('Making request to:', url);
       if (token) console.log('With token authentication');
@@ -88,7 +92,7 @@ const PatientSearch = () => {
         if (err.response.status === 401) {
           setError('Authentication required. Please log in with Cerner.');
           setToken(null);
-          localStorage.removeItem('cernerToken');
+          sessionStorage.removeItem('cernerToken');
         } else {
           setError(`Failed to search: ${err.response.data.detail || err.message}`);
         }

@@ -7,6 +7,10 @@ import secrets
 import urllib.parse
 import base64
 
+from requests import Session
+from database import get_db
+from utils.auth import require_role, get_current_user
+from utils.audit_logger import log_audit_event
 
 
 from jose import JWTError
@@ -92,6 +96,8 @@ async def search_patients(
     person_id: str = Query(None, description="Patient ID"),
     name: str = Query(None, description="Patient name"),
     authorization: str = Header(None),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role(["provider", "admin"]))
 ):
     """
     Search Cerner FHIR patients by ID or name. Pass Bearer token in Authorization header.
@@ -104,7 +110,13 @@ async def search_patients(
         "Accept": "application/fhir+json",
         "Authorization": f"Bearer {access_token}"
     }
-
+    log_audit_event(
+        db=db,
+        user_id=current_user.get("sub"),
+        action="searched patients",
+        resource_type="Patient",
+        resource_id=None
+    )
     query_params = {}
     if person_id:
         query_params["_id"] = person_id    # Cerner uses _id for specific patient search
@@ -124,14 +136,25 @@ async def search_patients(
 
 
 @router.get("/patient/{patient_id}")
-async def get_patient_by_id(patient_id: str, authorization: str = Header(None)):
+async def get_patient_by_id(
+    patient_id: str,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role(["provider", "admin"]))
+):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     access_token = authorization.split(" ")[1]
 
     url = f"https://fhir-ehr.cerner.com/r4/{CERNER_TENANT_ID}/Patient/{patient_id}"
     headers = {"Accept": "application/fhir+json", "Authorization": f"Bearer {access_token}"}
-
+    log_audit_event(
+        db=db,
+        user_id=current_user.get("sub"),
+        action="searched patients",
+        resource_type="Patient",
+        resource_id=None
+    )
     async with httpx.AsyncClient() as client:
         response = await client.get(url, headers=headers)
 
@@ -164,7 +187,13 @@ async def get_observations(patient_id: str, access_token: str):
 
 
 @router.get("/diagnostic-reports/{report_type}")
-async def get_cerner_diagnostic_reports(report_type: str, patient: str, authorization: str = Header(None)):
+async def get_cerner_diagnostic_reports(
+    report_type: str,
+    patient: str,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role(["provider"]))
+):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     access_token = authorization.split(" ")[1]
@@ -184,7 +213,13 @@ async def get_cerner_diagnostic_reports(report_type: str, patient: str, authoriz
         "Authorization": f"Bearer {access_token}",
         "Accept": "application/fhir+json"  # FIXED: Added Accept header
     }
-
+    log_audit_event(
+        db=db,
+        user_id=current_user.get("sub"),
+        action="pulled diagnostic reports",
+        resource_type="Patient",
+        resource_id=None
+    )
     async with httpx.AsyncClient() as client:
         response = await client.get(url, headers=headers)
 
@@ -199,7 +234,13 @@ async def get_cerner_diagnostic_reports(report_type: str, patient: str, authoriz
 
 # ------------------- Document References -------------------
 @router.get("/document-references/{doc_type}")
-async def get_cerner_document_references(doc_type: str, patient: str, authorization: str = Header(None)):
+async def get_cerner_document_references(
+    doc_type: str,
+    patient: str,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role(["provider"]))
+):
     """
     Fetch DocumentReference resources from Cerner FHIR API.
     doc_type can be 'clinical' or other types as needed.
@@ -220,7 +261,13 @@ async def get_cerner_document_references(doc_type: str, patient: str, authorizat
         "Authorization": f"Bearer {access_token}",
         "Accept": "application/fhir+json"  # Added Accept header
     }
-
+    log_audit_event(
+        db=db,
+        user_id=current_user.get("sub"),
+        action="pulled document references",
+        resource_type="Patient",
+        resource_id=None
+    )
     async with httpx.AsyncClient() as client:
         response = await client.get(url, headers=headers)
 

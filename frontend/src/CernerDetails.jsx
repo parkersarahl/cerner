@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 const CernerPatientDetails = () => {
   const { patientId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [patient, setPatient] = useState(null);
   const [radiology, setRadiology] = useState([]);
@@ -28,9 +29,12 @@ const CernerPatientDetails = () => {
 
   useEffect(() => {
     const fetchPatientData = async () => {
+      setLoading(true);
       try {
+        setError("");
         const ehrSource = localStorage.getItem("ehrSource");
-        const token = localStorage.getItem("cernerToken");
+        const jwtToken = localStorage.getItem("token");
+        const cernerToken = sessionStorage.getItem("cernerToken");
 
         if (!ehrSource || ehrSource !== "cerner") {
           console.warn("EHR source not set or not Cerner — redirecting...");
@@ -38,13 +42,16 @@ const CernerPatientDetails = () => {
           return;
         }
 
-        if (!token) {
+        if (!cernerToken) {
           console.error("Missing Cerner token — redirecting...");
           navigate("/cerner/login", { replace: true });
           return;
         }
 
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = { 
+          Authorization: `Bearer ${cernerToken}`,
+          'JWT-Authorization': `Bearer ${jwtToken}`
+        };
         const baseUrl = process.env.REACT_APP_API_URL;
 
         // Fetch all resources in parallel
@@ -125,12 +132,14 @@ const CernerPatientDetails = () => {
       : `${baseUrl}/cerner/binary/${binaryId}`;
 
     try {
-      const token = localStorage.getItem("cernerToken");
+      const cernerToken = sessionStorage.getItem("cernerToken");
+      const jwtToken = localStorage.getItem("token");
       const response = await axios.get(finalUrl, {
         responseType: "blob",
         headers: {
           Accept: contentType,
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${cernerToken}`,
+          'JWT-Authorization': `Bearer ${jwtToken}`
         },
       });
 

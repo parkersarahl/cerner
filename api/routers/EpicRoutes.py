@@ -183,7 +183,8 @@ async def get_epic_document_references(
     patientId: str = Query(..., description="Patient ID"),
     type: str = Query(..., description="Document type: radiology, lab, or clinical"),
     epic_token: str = Header(..., alias="Epic-Authorization"),
-    current_user: dict = Depends(require_role(["provider"]))
+    current_user: dict = Depends(require_role(["provider"])),
+    db: Session = Depends(get_db)
 ):
     """
     Fetch DocumentReference resources from Epic.
@@ -213,7 +214,14 @@ async def get_epic_document_references(
         "Authorization": f"Bearer {access_token}",
         "Accept": "application/fhir+json"
     }
-
+    
+    log_audit_event(
+        db=db,
+        user_id=current_user.get("sub"),
+        action="pulled document references",
+        resource_type="Patient",
+        resource_id=None
+    )
     async with httpx.AsyncClient() as client:
         response = await client.get(url, headers=headers)
 
@@ -231,7 +239,8 @@ async def get_epic_diagnostic_reports(
     report_type: str,
     patient: str,
     epic_token: str = Header(..., alias="Epic-Authorization"),
-    current_user: dict = Depends(require_role(["provider"]))
+    current_user: dict = Depends(require_role(["provider"])),
+    db: Session = Depends(get_db)
 ):
     """
     Get diagnostic reports by type.
@@ -259,6 +268,13 @@ async def get_epic_diagnostic_reports(
         "Authorization": f"Bearer {access_token}",
         "Accept": "application/fhir+json"
     }
+    log_audit_event(
+        db=db,
+        user_id=current_user.get("sub"),
+        action="opened diagnostic reports",
+        resource_type="Patient",
+        resource_id=None
+    )
 
     async with httpx.AsyncClient() as client:
         response = await client.get(url, headers=headers)
