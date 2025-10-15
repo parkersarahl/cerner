@@ -165,7 +165,7 @@ const PatientSearch = () => {
       
       <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
         <p className="text-sm text-blue-800">
-          <strong>Tip:</strong> Try searching for test patients: SMARTS, Chalmers, Peters, or Williams
+          <strong>Tip:</strong> Try searching for test patients: Smart, Chalmers, Peters, or Williams
         </p>
       </div>
 
