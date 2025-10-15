@@ -14,29 +14,49 @@ const PatientSearch = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('=== CERNER TOKEN CHECK ===');
+    console.log('Current URL:', window.location.href);
+    console.log('Search params:', Object.fromEntries(searchParams.entries()));
+    
     // Check for token in URL params (from OAuth callback)
     const urlToken = searchParams.get('token');
+    console.log('Token in URL:', !!urlToken);
+    
     if (urlToken) {
-      console.log('Token received from OAuth callback');
+      console.log('✅ Token received from OAuth callback, storing...');
       setToken(urlToken);
       sessionStorage.setItem('cernerToken', urlToken);
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
+      localStorage.setItem('ehrSource', 'cerner'); // Also set the EHR source
+      console.log('Token stored in sessionStorage');
+      
+      // Clean up URL but keep the token in state
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
     } else {
       // Check for stored token
       const storedToken = sessionStorage.getItem('cernerToken');
+      console.log('Token in sessionStorage:', !!storedToken);
+      
       if (storedToken) {
-        console.log('Using stored token');
+        console.log('✅ Using stored token from sessionStorage');
         setToken(storedToken);
+      } else {
+        console.log('❌ No token found - user needs to log in');
       }
     }
   }, [searchParams]);
 
   const handleLogin = () => {
+    console.log('Redirecting to Cerner login...');
     window.location.href = `${REACT_APP_API_URL}/cerner/login`;
   };
 
   const handleSearch = async () => {
+    if (!token) {
+      setError('Please log in with Cerner first');
+      return;
+    }
+
     setError('');
     setLoading(true);
 
@@ -44,7 +64,11 @@ const PatientSearch = () => {
       const url = `${REACT_APP_API_URL}/cerner/patient?name=${encodeURIComponent(name)}`;
       const jwtToken = localStorage.getItem('token');
       
-      // FIXED: Backend expects token in Authorization header, not Cerner-Authorization
+      console.log('=== SEARCH REQUEST ===');
+      console.log('URL:', url);
+      console.log('Cerner token present:', !!token);
+      console.log('JWT token present:', !!jwtToken);
+      
       const config = { 
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -52,14 +76,10 @@ const PatientSearch = () => {
         } 
       };
 
-      console.log('Making request to:', url);
-      console.log('Using Cerner token:', !!token);
-      console.log('Using JWT token:', !!jwtToken);
-
       const response = await axios.get(url, config);
 
+      console.log('✅ Search successful');
       console.log('Response status:', response.status);
-      console.log('Response data:', response.data);
 
       const cernerPatients = response.data.entry || [];
 
@@ -87,13 +107,13 @@ const PatientSearch = () => {
 
       setResults(patients);
     } catch (err) {
-      console.error('Error during patient search:', err);
+      console.error('❌ Search failed:', err);
       if (err.response) {
         console.error('Response status:', err.response.status);
         console.error('Response data:', err.response.data);
         
         if (err.response.status === 401) {
-          setError('Authentication required. Please log in with Cerner.');
+          setError('Authentication failed. Please log in with Cerner again.');
           setToken(null);
           sessionStorage.removeItem('cernerToken');
         } else {
@@ -116,7 +136,14 @@ const PatientSearch = () => {
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-4">Search Patients (Cerner)</h2>
       
-      {!token && (
+      {/* Token Status Debug Info */}
+      <div className="mb-4 p-3 bg-gray-100 border border-gray-300 rounded text-xs">
+        <strong>Debug Info:</strong>
+        <div>Token present: {token ? '✅ Yes' : '❌ No'}</div>
+        <div>SessionStorage has token: {sessionStorage.getItem('cernerToken') ? '✅ Yes' : '❌ No'}</div>
+      </div>
+      
+      {!token ? (
         <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
           <p className="text-sm text-yellow-800 mb-2">
             <strong>Note:</strong> You need to log in with Cerner to search for patients.
@@ -127,6 +154,12 @@ const PatientSearch = () => {
           >
             Log in with Cerner
           </button>
+        </div>
+      ) : (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+          <p className="text-sm text-green-800">
+            ✅ Authenticated with Cerner
+          </p>
         </div>
       )}
       
@@ -147,7 +180,7 @@ const PatientSearch = () => {
         <button
           type="submit"
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
-          disabled={loading || name.trim() === ''}
+          disabled={loading || name.trim() === '' || !token}
         >
           {loading ? 'Searching...' : 'Search'}
         </button>
