@@ -137,43 +137,16 @@ const PatientSearch = () => {
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-4">Search Patients (Cerner)</h2>
       
-      {/* Token Status Debug Info */}
-      <div className="mb-4 p-3 bg-gray-100 border border-gray-300 rounded text-xs">
-        <strong>Debug Info:</strong>
-        <div>Token present: {token ? '✅ Yes' : '❌ No'}</div>
-        <div>SessionStorage has token: {sessionStorage.getItem('cernerToken') ? '✅ Yes' : '❌ No'}</div>
-      </div>
-      
-      {!token ? (
-        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
-          <p className="text-sm text-yellow-800 mb-2">
-            <strong>Note:</strong> You need to log in with Cerner to search for patients.
-          </p>
-          <button
-            onClick={handleLogin}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            Log in with Cerner
-          </button>
-        </div>
-      ) : (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
-          <p className="text-sm text-green-800">
-            ✅ Authenticated with Cerner
-          </p>
-        </div>
-      )}
-      
       <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
         <p className="text-sm text-blue-800">
-          <strong>Tip:</strong> Try searching for test patients: Smart, Chalmers, Peters, or Williams
+          <strong>Tip:</strong> Try searching for test patients: SMARTS, Chalmers, Peters, or Williams
         </p>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-2">
         <input
           type="text"
-          placeholder="Patient name (e.g., Smart)"
+          placeholder="Patient name (e.g., SMARTS)"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="border p-2 w-full"

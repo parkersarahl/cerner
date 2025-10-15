@@ -53,15 +53,6 @@ const Navbar = () => {
               </>
             )}
             
-            {/* Admin-only link */}
-            {isAdmin && (
-              <Link
-                to="/admin"
-                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Admin Panel
-              </Link>
-            )}
           </div>
 
           {/* User Info & Logout */}
