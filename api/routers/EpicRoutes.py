@@ -149,7 +149,9 @@ async def get_patient_by_id(
     access_token = epic_token.split(" ")[1]
     
     username = current_user.get("sub", "unknown")
+    #Print basic log to backend console
     print(f"User '{username}' accessing patient {patient_id}")
+    # Log who accessed in database
     log_audit_event(
         db=db,
         user_id=current_user.get("sub"),
