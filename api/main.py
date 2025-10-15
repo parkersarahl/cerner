@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from routers import auth, patient, cerner_routes, EpicRoutes
 from starlette.middleware.sessions import SessionMiddleware
 import os
+from database import Base, engine
 
 app = FastAPI()
 
@@ -32,3 +33,18 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SESSION_SECRET", "dev-secret"))
 
 
+@app.on_event("startup")
+def startup():
+    print("=" * 50)
+    print("🚀 Starting ConnectEHR API...")
+    print("=" * 50)
+    
+    try:
+        print("📝 Creating database tables...")
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database tables created successfully!")
+        print(f"📊 Connected to: {engine.url}")
+    except Exception as e:
+        print(f"❌ Database error: {e}")
+    
+    print("=" * 50)
