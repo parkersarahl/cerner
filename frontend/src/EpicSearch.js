@@ -137,6 +137,11 @@ const EpicSearch = () => {
           </button>
         </div>
       )}
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+        <p className="text-sm text-blue-800">
+          <strong>Tip:</strong> Try searching for with test patient ID: erXuFYUfucBZaryVksYEcMg3 or e0w0LEDCYtfckT6N.CkJKCw3 
+        </p>
+      </div>
 
       <form onSubmit={onSubmit} className="space-y-2 mb-4">
         <input

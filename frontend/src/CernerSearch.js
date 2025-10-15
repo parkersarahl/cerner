@@ -57,7 +57,7 @@ const PatientSearch = () => {
       const cernerPatients = response.data.entry || [];
 
       if (cernerPatients.length === 0) {
-        setError('No patients found. Try searching for: Smart, Chalmers, Peters, or Williams');
+        setError('No patients found. Try searching for: SMARTS, Chalmers, Peters, or Williams');
         setResults([]);
         setLoading(false);
         return;
