@@ -7,7 +7,7 @@ import urllib.parse
 import secrets
 
 from requests import Session
-from api.database import get_db
+from database import get_db
 from routers.epicBase import EpicEHR
 from utils.auth import require_role, get_current_user
 from utils.audit_logger import log_audit_event
@@ -133,7 +133,8 @@ async def search_patients(
 async def get_patient_by_id(
     patient_id: str,
     epic_token: str = Header(..., alias="Epic-Authorization"),
-    current_user: dict = Depends(require_role(["provider", "admin"]))
+    current_user: dict = Depends(require_role(["provider", "admin"])),
+    db: Session = Depends(get_db)
 ):
     """
     Get specific patient by ID.
@@ -149,6 +150,13 @@ async def get_patient_by_id(
     
     username = current_user.get("sub", "unknown")
     print(f"User '{username}' accessing patient {patient_id}")
+    log_audit_event(
+        db=db,
+        user_id=current_user.get("sub"),
+        action="searched patients",
+        resource_type="Patient",
+        resource_id=None
+    )
 
     url = f"{EPIC_FHIR_BASE_URL}/Patient/{patient_id}"
     headers = {
