@@ -37,11 +37,11 @@ const EpicDetails = () => {
         const epicToken = location.state?.epicToken || sessionStorage.getItem('epic_token');
         const jwtToken = localStorage.getItem('token');
 
-        console.log('=== EPIC DETAILS - TOKEN CHECK ===');
-        console.log('Epic token from navigation state:', !!location.state?.epicToken);
-        console.log('Epic token from sessionStorage:', !!sessionStorage.getItem('epic_token'));
-        console.log('Epic token exists:', !!epicToken);
-        console.log('JWT token exists:', !!jwtToken);
+        //console.log('=== EPIC DETAILS - TOKEN CHECK ===');
+        //console.log('Epic token from navigation state:', !!location.state?.epicToken);
+        //console.log('Epic token from sessionStorage:', !!sessionStorage.getItem('epic_token'));
+        //console.log('Epic token exists:', !!epicToken);
+        //console.log('JWT token exists:', !!jwtToken);
 
         if (!epicToken) {
           console.error("Missing Epic token");
@@ -84,8 +84,8 @@ const EpicDetails = () => {
   }, [patientId, navigate, location]);
 
   const handleResourceClick = async (report) => {
-    console.log("=== CLICKED RESOURCE ===");
-    console.log("Full resource:", JSON.stringify(report, null, 2));
+    //console.log("=== CLICKED RESOURCE ===");
+    //console.log("Full resource:", JSON.stringify(report, null, 2));
     
     if (!report) {
       setError("No report data available for this item.");
@@ -109,9 +109,9 @@ const EpicDetails = () => {
       return;
     }
 
-    console.log("Attachment:", attachment);
-    console.log("Has 'data' field?", !!attachment.data);
-    console.log("Has 'url' field?", !!attachment.url);
+    //console.log("Attachment:", attachment);
+    //console.log("Has 'data' field?", !!attachment.data);
+    //console.log("Has 'url' field?", !!attachment.url);
 
     // CHECK FOR INLINE BASE64 DATA FIRST
     if (attachment.data) {

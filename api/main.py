@@ -31,7 +31,4 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SESSION_SECRET", "dev-secret"))
 
-# ✅ Root health check for Render
-@app.get("/")
-def read_root():
-    return {"status": "ok", "message": "ConnectEHR API is running 🚀"}
+
