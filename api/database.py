@@ -4,10 +4,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from fastapi import Depends 
 
-
 # Use your actual DB URL here (e.g., PostgreSQL or SQLite)
-DATABASE_URL = "postgresql://postgres:Carol2024#@localhost:5432/ehr_audit"
-
+DATABASE_URL = "postgresql://postgres:connectehr2025@db.dnvsfxacpzpegudetaqf.supabase.co:5432/postgres"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

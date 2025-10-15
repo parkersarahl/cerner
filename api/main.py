@@ -7,6 +7,7 @@ from models import audit_log
 from routers import auth, patient, cerner_routes, EpicRoutes
 from starlette.middleware.sessions import SessionMiddleware
 import os
+from database import Base, engine
 
 app = FastAPI()
 
