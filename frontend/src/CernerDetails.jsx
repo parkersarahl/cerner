@@ -49,8 +49,8 @@ const CernerPatientDetails = () => {
         }
 
         const headers = { 
-          Authorization: `Bearer ${cernerToken}`,
-          'JWT-Authorization': `Bearer ${jwtToken}`
+          'Authorization': `Bearer ${jwtToken}`,
+          'Cerner-Authorization': `Bearer ${cernerToken}`
         };
         const baseUrl = process.env.REACT_APP_API_URL;
 

@@ -26,8 +26,9 @@ const PatientSearch = () => {
       console.log('✅ Token received from OAuth callback, storing...');
       setToken(urlToken);
       sessionStorage.setItem('cernerToken', urlToken);
-      localStorage.setItem('ehrSource', 'cerner'); // Also set the EHR source
+      localStorage.setItem('ehrSource', 'cerner');
       console.log('Token stored in sessionStorage');
+      console.log('EHR source set to: cerner');
       
       // Clean up URL but keep the token in state
       const newUrl = window.location.pathname;
@@ -71,8 +72,8 @@ const PatientSearch = () => {
       
       const config = { 
         headers: { 
-          'Authorization': `Bearer ${token}`,
-          'JWT-Authorization': `Bearer ${jwtToken}`
+          'Authorization': `Bearer ${jwtToken}`,        // JWT for backend auth
+          'Cerner-Authorization': `Bearer ${token}`     // Cerner token for FHIR API
         } 
       };
 
@@ -198,6 +199,7 @@ const PatientSearch = () => {
             key={patient.id}
             className="border p-2 rounded shadow hover:bg-gray-100 cursor-pointer"
             onClick={() => {
+              localStorage.setItem('ehrSource', 'cerner');
               localStorage.setItem('searchSource', 'cerner');
               navigate(`/cerner/patient/${patient.id}`);
             }}
