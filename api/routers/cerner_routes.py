@@ -1,11 +1,13 @@
 # cerner_routes.py
 import datetime
-from fastapi import APIRouter, Request, HTTPException, Query, Header, Response
+from fastapi import APIRouter, Request, HTTPException, Query, Header, Response, Depends
 from fastapi.responses import RedirectResponse
 import httpx
 import secrets
 import urllib.parse
 import base64
+
+
 
 from jose import JWTError
 from config import (
@@ -89,7 +91,7 @@ async def cerner_callback(
 async def search_patients(
     person_id: str = Query(None, description="Patient ID"),
     name: str = Query(None, description="Patient name"),
-    authorization: str = Header(None)
+    authorization: str = Header(None),
 ):
     """
     Search Cerner FHIR patients by ID or name. Pass Bearer token in Authorization header.
@@ -117,6 +119,7 @@ async def search_patients(
             status_code=response.status_code,
             detail=f"Failed to search patients: {response.text}"
         )
+
     return response.json()
 
 
