@@ -13,17 +13,17 @@ const EpicSearch = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const urlToken = searchParams.get('token');
-    if (urlToken) {
-      setToken(urlToken);
-      localStorage.setItem('epic_token', urlToken);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else {
-      const storedToken = localStorage.getItem('epic_token');
-      if (storedToken) setToken(storedToken);
-    }
-  }, [searchParams]);
+useEffect(() => {
+  const urlToken = searchParams.get('token');
+  if (urlToken) {
+    setToken(urlToken);
+    sessionStorage.setItem('epic_token', urlToken);  // Changed from localStorage
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else {
+    const storedToken = sessionStorage.getItem('epic_token');  // Changed from localStorage
+    if (storedToken) setToken(storedToken);
+  }
+}, [searchParams]);
 
   const handleLogin = () => {
     window.location.href = `${REACT_APP_API_URL}/epic/login`;
@@ -45,8 +45,10 @@ const EpicSearch = () => {
 
     try {
       const url = `${REACT_APP_API_URL}/epic/patient`;
+      const jwtToken = localStorage.getItem('token');
       const config = {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${jwtToken}`,
+                  'Epic-Authorization': `Bearer ${token}` },
         params: { patient_id: patientId.trim() }, // only search by ID
       };
 
@@ -84,7 +86,7 @@ const EpicSearch = () => {
       if (err.response?.status === 401) {
         setError('Authentication required. Please log in with Epic.');
         setToken(null);
-        localStorage.removeItem('epic_token');
+        sessionStorage.removeItem('epic_token');
       } else {
         setError(`Search failed: ${err.response?.data?.detail || err.message}`);
       }
