@@ -1,4 +1,4 @@
-// src/api/axiosConfig.js
+//axiosConfig.js
 import axios from 'axios';
 
 const isLocalhost = window.location.hostname === 'localhost';

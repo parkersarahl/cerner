@@ -56,7 +56,7 @@ const EpicSearch = () => {
 
       const response = await axios.get(url, config);
 
-      //console.log('FHIR Bundle:', JSON.stringify(response.data, null, 2));
+      console.log('FHIR Bundle:', JSON.stringify(response.data, null, 2));
 
       const epicPatients = response.data.entry || [];
 
@@ -102,10 +102,10 @@ const EpicSearch = () => {
   };
 
   const handlePatientClick = (patient) => {
-    //console.log('=== NAVIGATING TO PATIENT ===');
+    console.log('=== NAVIGATING TO PATIENT ===');
     const epicToken = sessionStorage.getItem('epic_token');
-    //console.log('Epic token exists:', !!epicToken);
-    //console.log('Token preview:', epicToken?.substring(0, 30));
+    console.log('Epic token exists:', !!epicToken);
+    console.log('Token preview:', epicToken?.substring(0, 30));
     
     if (!epicToken) {
       console.error('❌ No Epic token found before navigation!');
@@ -113,7 +113,7 @@ const EpicSearch = () => {
       return;
     }
     
-    //console.log('✅ Token verified, navigating with state...');
+    console.log('✅ Token verified, navigating with state...');
     localStorage.setItem('searchSource', 'epic');
     navigate(`/epic/patient/${patient.id}`, {
       state: { epicToken }  // Pass token through navigation
