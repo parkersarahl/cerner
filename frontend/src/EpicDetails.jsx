@@ -324,49 +324,75 @@ this document would be fully accessible.
   }
 
   return (
-    <div className="p-4">
+    <div className="p-8 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Epic Patient Details</h2>
+        <h2 className="text-2xl font-semibold text-gray-800">Epic Patient Details</h2>
         <button
           onClick={() => navigate(-1)}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Back
         </button>
       </div>
       
+     {/* Patient Demographics */}
       {patient && (
-        <div className="mb-4">
-          <p className="text-lg">
-            <strong>Name:</strong> {patient.name?.[0]?.given?.join(' ')} {patient.name?.[0]?.family}
-          </p>
-          <p className="text-lg">
-            <strong>Date of Birth:</strong> {new Date(patient.birthDate).toLocaleDateString('en-US')}
-          </p>
+        <div className="bg-white shadow rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-700 mb-3">Patient Information</h2>
+          <div className="space-y-2">
+            <p className="text-gray-800">
+              <strong>Name:</strong>{' '}
+              {patient.name?.[0]?.text || 
+               `${patient.name?.[0]?.given?.join(' ')} ${patient.name?.[0]?.family}` || 
+               'N/A'}
+            </p>
+            <p className="text-gray-800">
+              <strong>Gender:</strong> {patient.gender || 'N/A'}
+            </p>
+            <p className="text-gray-800">
+              <strong>Birth Date:</strong>{' '}
+              {patient.birthDate 
+                ? new Date(patient.birthDate).toLocaleDateString('en-US')
+                : 'N/A'}
+            </p>
+            <p className="text-gray-800">
+              <strong>ID:</strong> {patient.id || 'N/A'}
+            </p>
+          </div>
         </div>
       )}
-      
-      {error && <p className="text-red-600 mb-4">{error}</p>}
-
-      <section className="mb-6">
-        <h3 className="text-lg font-medium">Radiology Reports</h3>
-        <ul className="list-disc ml-6">
+       {/* Radiology Reports */}
+      <section className="bg-white shadow rounded-lg p-6 mb-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-3">Radiology Reports</h3>
+        {radiologyReports.length > 0 ? (
+        <ul className="space-y-1">
           {radiologyReports.map((r) => renderItem(r, 'RadiologyReport'))}
         </ul>
+        ) : (
+          <p className="text-gray-500">No radiology reports found.</p>
+        )}
       </section>
-
-      <section className="mb-6">
-        <h3 className="text-lg font-medium">Lab Reports</h3>
-        <ul className="list-disc ml-6">
+      {/* Lab Reports */}
+      <section className="bg-white shadow rounded-lg p-6 mb-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-3">Lab Reports</h3>
+        {labReports.length > 0 ? (
+        <ul className="space-y-1">
           {labReports.map((r) => renderItem(r, 'LabReport'))}
         </ul>
+        ) : (
+          <p className="text-gray-500">No lab reports found.</p>
+        )}
       </section>
-      
-      <section className="mb-6">
-        <h3 className="text-lg font-medium">Clinical Notes</h3>
-        <ul className="list-disc ml-6">
+      {/* Clinical Notes */}
+      <section className="bg-white shadow rounded-lg p-6 mb-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-3">Clinical Notes</h3>
+        {clinicalNotes.length > 0 ? (
+        <ul className="space-y-1">
           {clinicalNotes.map((r) => renderItem(r, 'ClinicalNote'))}
         </ul>
+        ) : (
+          <p className="text-gray-500">No clinical notes found.</p>
+        )}
       </section>
     </div>
   );
