@@ -45,7 +45,7 @@ const EpicDetails = () => {
 
         if (!epicToken) {
           console.error("Missing Epic token");
-          navigate("/epic/login", { replace: true });
+          navigate("/epic/search", { replace: true });
           return;
         }
         if (!sessionStorage.getItem('epic_token') && epicToken) {
@@ -55,7 +55,7 @@ const EpicDetails = () => {
         const config = {
           headers: {
             'Authorization': `Bearer ${jwtToken}`,
-            'Epic-Authorization': `Bearer ${token}`,
+            'Epic-Authorization': `Bearer ${epicToken}`,
           },
         };
 
@@ -81,7 +81,7 @@ const EpicDetails = () => {
     };
 
     fetchResources();
-  }, [patientId, navigate]);
+  }, [patientId, navigate, location]);
 
   const handleResourceClick = async (report) => {
     console.log("=== CLICKED RESOURCE ===");
