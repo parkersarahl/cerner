@@ -34,6 +34,7 @@ const EpicDetails = () => {
       try {
         setError('');
         const token = localStorage.getItem('epic_token');
+        const jwtToken = localStorage.getItem('token');
 
         if (!token) {
           console.error("Missing Epic token");
@@ -43,7 +44,8 @@ const EpicDetails = () => {
 
         const config = {
           headers: {
-            Authorization: `Bearer ${token}`,
+            'Authorization': `Bearer ${jwtToken}`,
+            'Epic-Authorization': `Bearer ${token}`,
           },
         };
 
@@ -163,12 +165,14 @@ const EpicDetails = () => {
     console.log("Final URL:", finalUrl);
 
     try {
-      const token = localStorage.getItem("epic_token");
+      const epictoken = sessionStorage.getItem("epic_token");
+      const jwtToken = localStorage.getItem('token');
       const response = await axios.get(finalUrl, {
         responseType: "blob",
         headers: {
           Accept: contentType,
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${jwtToken}`,
+          'Epic-Authorization': `Bearer ${epictoken}`,
         },
       });
 
