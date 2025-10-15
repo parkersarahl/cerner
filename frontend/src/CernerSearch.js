@@ -43,15 +43,18 @@ const PatientSearch = () => {
     try {
       const url = `${REACT_APP_API_URL}/cerner/patient?name=${encodeURIComponent(name)}`;
       const jwtToken = localStorage.getItem('token');
-      const config = 
-         { headers: { 
-          'Authorization': `Bearer ${jwtToken}`,
-          'Cerner-Authorization': `Bearer ${token}`
-       } }
-      ;
+      
+      // FIXED: Backend expects token in Authorization header, not Cerner-Authorization
+      const config = { 
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'JWT-Authorization': `Bearer ${jwtToken}`
+        } 
+      };
 
       console.log('Making request to:', url);
-      if (token) console.log('With token authentication');
+      console.log('Using Cerner token:', !!token);
+      console.log('Using JWT token:', !!jwtToken);
 
       const response = await axios.get(url, config);
 
@@ -129,7 +132,7 @@ const PatientSearch = () => {
       
       <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
         <p className="text-sm text-blue-800">
-          <strong>Tip:</strong> Try searching for test patients: Smart, Chalmers, Peters, or Williams
+          <strong>Tip:</strong> Try searching for test patients: SMARTS, Chalmers, Peters, or Williams
         </p>
       </div>
 
